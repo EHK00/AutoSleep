@@ -22,6 +22,16 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * 타이머 카운트다운을 포그라운드에서 유지하고, 만료 시 수면 전환을 트리거하는 서비스.
+ *
+ * [TimerRepository.state]를 구독하여:
+ * - [TimerState.Running]: 알림에 남은 시간을 표시한다.
+ * - [TimerState.Expired]: [ExecuteSleepSequenceUseCase]를 실행하고 서비스를 종료한다.
+ * - [TimerState.Cancelled]: 서비스를 즉시 종료한다.
+ *
+ * [START_STICKY]로 선언되어 시스템이 프로세스를 종료하더라도 서비스를 재시작하려 시도한다.
+ */
 @AndroidEntryPoint
 class TimerService : Service() {
 
@@ -37,6 +47,10 @@ class TimerService : Service() {
         observeTimer()
     }
 
+    /**
+     * [TimerRepository.state]를 수집하여 알림 갱신 및 수면 시퀀스 실행을 처리한다.
+     * 만료 시 [ExecuteSleepSequenceUseCase]를 호출한 뒤 [stopSelf]로 서비스를 종료한다.
+     */
     private fun observeTimer() {
         scope.launch {
             timerRepository.state.collect { state ->
@@ -57,9 +71,11 @@ class TimerService : Service() {
         }
     }
 
+    /** 시스템 재시작 후에도 서비스가 복구되도록 [START_STICKY]를 반환한다. */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int =
         START_STICKY
 
+    /** 바인드 불필요. null 반환. */
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
@@ -67,6 +83,7 @@ class TimerService : Service() {
         scope.cancel()
     }
 
+    /** 포그라운드 서비스 알림 채널을 생성한다. Android 8+ 필수. */
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
@@ -77,6 +94,10 @@ class TimerService : Service() {
         manager.createNotificationChannel(channel)
     }
 
+    /**
+     * 주어진 텍스트로 포그라운드 알림을 생성한다.
+     * 알림을 탭하면 [MainActivity]로 이동한다.
+     */
     private fun buildNotification(text: String): Notification {
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -93,6 +114,7 @@ class TimerService : Service() {
             .build()
     }
 
+    /** 기존 포그라운드 알림의 텍스트를 갱신한다. */
     private fun updateNotification(text: String) {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(NOTIFICATION_ID, buildNotification(text))

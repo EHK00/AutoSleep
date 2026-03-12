@@ -12,6 +12,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * [PermissionRepository]의 구현체.
+ * Android 시스템 API를 직접 조회하여 각 권한의 허용 여부를 확인한다.
+ * 접근성 서비스 연결 여부는 [SleepAccessibilityService]의 WeakReference singleton으로 판단한다.
+ */
 @Singleton
 class PermissionRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -21,6 +26,10 @@ class PermissionRepositoryImpl @Inject constructor(
         context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
     private val adminComponent = ComponentName(context, AdminReceiver::class.java)
 
+    /**
+     * 네 가지 권한(알림 리스너, 접근성, 기기 관리자, WRITE_SETTINGS)의 현재 상태를 반환한다.
+     * 실시간 감지가 아닌 호출 시점의 스냅샷이므로, 화면 복귀 시 명시적으로 재호출해야 한다.
+     */
     override fun getPermissionState(): PermissionState = PermissionState(
         notificationListenerGranted = isNotificationListenerEnabled(),
         accessibilityGranted = SleepAccessibilityService.isConnected(),
@@ -28,6 +37,10 @@ class PermissionRepositoryImpl @Inject constructor(
         writeSettingsGranted = Settings.System.canWrite(context),
     )
 
+    /**
+     * [Settings.Secure]의 `enabled_notification_listeners` 값에 현재 패키지가 포함되어 있는지 확인한다.
+     * @return NotificationListenerService가 시스템에 등록된 경우 true.
+     */
     private fun isNotificationListenerEnabled(): Boolean {
         val enabledListeners = Settings.Secure.getString(
             context.contentResolver,

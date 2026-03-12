@@ -19,6 +19,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -26,9 +29,15 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ekh.autosleep.domain.entity.TimerState
 import com.ekh.autosleep.presentation.main.MainViewModel
+import com.ekh.autosleep.presentation.permission.PermissionSetupScreen
 import com.ekh.autosleep.ui.theme.AutoSleepTheme
 import dagger.hilt.android.AndroidEntryPoint
 
+/**
+ * 앱의 단일 진입점 Activity.
+ * Hilt 주입을 위해 [@AndroidEntryPoint]로 선언되며,
+ * Compose로 [MainScreen]을 렌더링한다.
+ */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,12 +53,30 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * 메인 화면 컴포저블.
+ * 권한이 부족하면 [PermissionSetupScreen]을 표시하고,
+ * 권한이 충족되면 타이머 UI(시간 표시 + 프리셋 버튼 + 취소 버튼)를 표시한다.
+ * [setupDone] 플래그로 사용자가 권한 화면을 건너뛸 수 있다.
+ */
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
     viewModel: MainViewModel = hiltViewModel(),
 ) {
     val timerState by viewModel.timerState.collectAsState()
+    val permissionState by viewModel.permissionState.collectAsState()
+    var setupDone by rememberSaveable { mutableStateOf(false) }
+
+    if (!setupDone && !permissionState.canLockScreen) {
+        PermissionSetupScreen(
+            permissionState = permissionState,
+            onRefresh = viewModel::refreshPermissions,
+            onContinue = { setupDone = true },
+            modifier = modifier,
+        )
+        return
+    }
 
     Column(
         modifier = modifier
@@ -74,6 +101,7 @@ fun MainScreen(
         Spacer(modifier = Modifier.height(48.dp))
 
         val presets = listOf(
+            "10초" to 10_000L,
             "5분" to 5 * 60_000L,
             "15분" to 15 * 60_000L,
             "30분" to 30 * 60_000L,
