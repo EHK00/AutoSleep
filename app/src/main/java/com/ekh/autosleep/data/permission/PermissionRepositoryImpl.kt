@@ -1,12 +1,9 @@
 package com.ekh.autosleep.data.permission
 
-import android.app.admin.DevicePolicyManager
-import android.content.ComponentName
 import android.content.Context
 import android.provider.Settings
 import com.ekh.autosleep.domain.entity.PermissionState
 import com.ekh.autosleep.domain.repository.PermissionRepository
-import com.ekh.autosleep.service.AdminReceiver
 import com.ekh.autosleep.service.SleepAccessibilityService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -22,19 +19,13 @@ class PermissionRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : PermissionRepository {
 
-    private val devicePolicyManager =
-        context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    private val adminComponent = ComponentName(context, AdminReceiver::class.java)
-
     /**
-     * 네 가지 권한(알림 리스너, 접근성, 기기 관리자, WRITE_SETTINGS)의 현재 상태를 반환한다.
+     * 두 가지 권한(알림 리스너, 접근성)의 현재 상태를 반환한다.
      * 실시간 감지가 아닌 호출 시점의 스냅샷이므로, 화면 복귀 시 명시적으로 재호출해야 한다.
      */
     override fun getPermissionState(): PermissionState = PermissionState(
         notificationListenerGranted = isNotificationListenerEnabled(),
         accessibilityGranted = SleepAccessibilityService.isConnected(),
-        deviceAdminGranted = devicePolicyManager.isAdminActive(adminComponent),
-        writeSettingsGranted = Settings.System.canWrite(context),
     )
 
     /**

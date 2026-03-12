@@ -1,9 +1,6 @@
 package com.ekh.autosleep.presentation.permission
 
-import android.app.admin.DevicePolicyManager
-import android.content.ComponentName
 import android.content.Intent
-import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,12 +25,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.ekh.autosleep.domain.entity.PermissionState
-import com.ekh.autosleep.service.AdminReceiver
 
 /**
  * 앱 최초 실행 시 표시되는 권한 설정 온보딩 화면.
  *
- * 네 가지 권한을 필수/선택으로 나누어 안내하며, 각 항목에 ✓/✗ 상태와 설정 버튼을 표시한다.
+ * 두 가지 권한을 필수/선택으로 나누어 안내하며, 각 항목에 ✓/✗ 상태와 설정 버튼을 표시한다.
  * 화면 복귀 시([Lifecycle.Event.ON_RESUME]) [onRefresh]를 호출하여 권한 상태를 자동으로 갱신한다.
  * [PermissionState.canLockScreen]이 true일 때만 "시작하기" 버튼이 활성화된다.
  *
@@ -80,34 +76,14 @@ fun PermissionSetupScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // 필수 권한 섹션
-        SectionLabel("필수 (화면 끄기 — 하나 이상)")
+        SectionLabel("필수 (화면 끄기)")
 
         PermissionItem(
             title = "접근성 서비스",
-            description = "타이머 만료 시 화면을 잠급니다. (권장)",
+            description = "타이머 만료 시 화면을 잠급니다.",
             granted = permissionState.accessibilityGranted,
             onSetup = {
                 context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            },
-        )
-
-        PermissionItem(
-            title = "기기 관리자",
-            description = "접근성 서비스를 사용할 수 없을 때 화면 잠금 대안.",
-            granted = permissionState.deviceAdminGranted,
-            onSetup = {
-                context.startActivity(
-                    Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
-                        putExtra(
-                            DevicePolicyManager.EXTRA_DEVICE_ADMIN,
-                            ComponentName(context, AdminReceiver::class.java),
-                        )
-                        putExtra(
-                            DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                            "타이머 만료 시 화면을 잠그기 위해 필요합니다.",
-                        )
-                    }
-                )
             },
         )
 
@@ -125,20 +101,6 @@ fun PermissionSetupScreen(
             },
         )
 
-        PermissionItem(
-            title = "시스템 설정 쓰기",
-            description = "화면 끄기 권한이 없을 때 화면 타임아웃을 단축하는 최후 수단.",
-            granted = permissionState.writeSettingsGranted,
-            onSetup = {
-                context.startActivity(
-                    Intent(
-                        Settings.ACTION_MANAGE_WRITE_SETTINGS,
-                        Uri.parse("package:${context.packageName}"),
-                    )
-                )
-            },
-        )
-
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
@@ -146,7 +108,7 @@ fun PermissionSetupScreen(
             enabled = permissionState.canLockScreen,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (permissionState.canLockScreen) "시작하기" else "화면 끄기 권한이 필요합니다")
+            Text(if (permissionState.canLockScreen) "시작하기" else "접근성 서비스 권한이 필요합니다")
         }
     }
 }
