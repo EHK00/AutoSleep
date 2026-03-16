@@ -1,9 +1,13 @@
 package com.ekh.autosleep
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -24,6 +29,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,9 +50,19 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
         setContent {
             AutoSleepTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -56,7 +76,8 @@ class MainActivity : ComponentActivity() {
 /**
  * 메인 화면 컴포저블.
  * 권한이 부족하면 [PermissionSetupScreen]을 표시하고,
- * 권한이 충족되면 타이머 UI(시간 표시 + 프리셋 버튼 + 취소 버튼)를 표시한다.
+ * 권한이 충족되면 타이머 UI를 표시한다.
+ * 타이머가 실행 중이면 카운트다운을 보여주고, 그 외에는 HH:MM:SS 키패드 입력 UI를 보여준다.
  * [setupDone] 플래그로 사용자가 권한 화면을 건너뛸 수 있다.
  */
 @Composable
@@ -66,6 +87,7 @@ fun MainScreen(
 ) {
     val timerState by viewModel.timerState.collectAsState()
     val permissionState by viewModel.permissionState.collectAsState()
+    val timerDigits by viewModel.timerDigits.collectAsState()
     var setupDone by rememberSaveable { mutableStateOf(false) }
 
     if (!setupDone && !permissionState.canLockScreen) {
@@ -85,55 +107,119 @@ fun MainScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        val timerText = when (timerState) {
-            is TimerState.Idle -> "타이머 대기 중"
-            is TimerState.Running -> {
-                val running = timerState as TimerState.Running
-                val minutes = running.remainingMs / 60_000
-                val seconds = (running.remainingMs % 60_000) / 1_000
-                "%02d:%02d".format(minutes, seconds)
+        if (timerState is TimerState.Running) {
+            val running = timerState as TimerState.Running
+            val h = running.remainingMs / 3_600_000
+            val m = (running.remainingMs % 3_600_000) / 60_000
+            val s = (running.remainingMs % 60_000) / 1_000
+            Text(
+                text = "%02d:%02d:%02d".format(h, m, s),
+                fontSize = 56.sp,
+                fontWeight = FontWeight.Light,
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            OutlinedButton(
+                onClick = { viewModel.cancelTimer() },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("취소")
             }
-            is TimerState.Expired -> "수면 전환 완료"
-            is TimerState.Cancelled -> "취소됨"
+        } else {
+            TimerInputDisplay(digits = timerDigits)
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            TimerInputPad(
+                onDigit = viewModel::onTimerDigit,
+                onDoubleZero = viewModel::onTimerDoubleZero,
+                onDelete = viewModel::onTimerDelete,
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = { viewModel.startTimer(timerDigits.toDurationMs()) },
+                enabled = timerDigits.toDurationMs() > 0,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("시작", fontSize = 18.sp)
+            }
         }
-        Text(text = timerText, fontSize = 48.sp)
+    }
+}
 
-        Spacer(modifier = Modifier.height(48.dp))
+/**
+ * 입력 중인 숫자 목록을 HH:MM:SS 형식으로 표시하는 컴포저블.
+ * 아직 입력되지 않은 자리는 회색으로, 입력된 자리는 흰색으로 강조한다.
+ */
+@Composable
+private fun TimerInputDisplay(digits: List<Int>) {
+    val padded = List(6 - digits.size) { 0 } + digits
+    val activeStart = 6 - digits.size
 
-        val presets = listOf(
-            "10초" to 10_000L,
-            "5분" to 5 * 60_000L,
-            "15분" to 15 * 60_000L,
-            "30분" to 30 * 60_000L,
-            "60분" to 60 * 60_000L,
-        )
+    val text = buildAnnotatedString {
+        padded.forEachIndexed { i, d ->
+            val color = if (i >= activeStart) Color.White else Color.Gray
+            withStyle(SpanStyle(color = color)) { append(d.toString()) }
+            when (i) {
+                1 -> withStyle(SpanStyle(color = Color.White)) { append(":") }
+                3 -> withStyle(SpanStyle(color = Color.White)) { append(":") }
+            }
+        }
+    }
 
-        presets.chunked(2).forEach { row ->
+    Text(text = text, fontSize = 64.sp, fontWeight = FontWeight.Light)
+}
+
+/**
+ * 갤럭시 시계 스타일 타이머 키패드 컴포저블.
+ * 1–9, "00", 0, ⌫ 버튼을 3×4 그리드로 배치한다.
+ */
+@Composable
+private fun TimerInputPad(
+    onDigit: (Int) -> Unit,
+    onDoubleZero: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val rows = listOf(
+        listOf("1", "2", "3"),
+        listOf("4", "5", "6"),
+        listOf("7", "8", "9"),
+        listOf("00", "0", "⌫"),
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        rows.forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                row.forEach { (label, durationMs) ->
-                    Button(
-                        onClick = { viewModel.startTimer(durationMs) },
+                row.forEach { key ->
+                    TextButton(
+                        onClick = {
+                            when (key) {
+                                "⌫" -> onDelete()
+                                "00" -> onDoubleZero()
+                                else -> onDigit(key.toInt())
+                            }
+                        },
                         modifier = Modifier.weight(1f),
-                        enabled = timerState !is TimerState.Running,
                     ) {
-                        Text(label)
+                        Text(key, fontSize = 24.sp)
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedButton(
-            onClick = { viewModel.cancelTimer() },
-            enabled = timerState is TimerState.Running,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("취소")
         }
     }
+}
+
+/** digits 목록을 밀리초 단위 총 시간으로 변환한다. */
+private fun List<Int>.toDurationMs(): Long {
+    val d = List(6 - size) { 0 } + this
+    val h = d[0] * 10 + d[1]
+    val m = d[2] * 10 + d[3]
+    val s = d[4] * 10 + d[5]
+    return (h * 3600L + m * 60L + s) * 1000L
 }
