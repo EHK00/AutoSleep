@@ -15,6 +15,8 @@ import com.ekh.autosleep.domain.usecase.screen.LockScreenUseCase
 import com.ekh.autosleep.domain.usecase.sleep.ExecuteSleepSequenceUseCase
 import com.ekh.autosleep.domain.usecase.timer.CancelTimerUseCase
 import com.ekh.autosleep.domain.usecase.timer.StartTimerUseCase
+import com.ekh.autosleep.service.TimerServiceController
+import com.ekh.autosleep.service.TimerServiceControllerImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -37,6 +39,9 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindPermissionRepository(impl: PermissionRepositoryImpl): PermissionRepository
+
+    @Binds @Singleton
+    abstract fun bindTimerServiceController(impl: TimerServiceControllerImpl): TimerServiceController
 }
 
 @Module

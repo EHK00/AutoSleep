@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,21 +43,28 @@ import com.ekh.autosleep.presentation.main.MainViewModel
 import com.ekh.autosleep.presentation.permission.PermissionSetupScreen
 import com.ekh.autosleep.ui.theme.AutoSleepTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * 앱의 단일 진입점 Activity.
  * Hilt 주입을 위해 [@AndroidEntryPoint]로 선언되며,
  * Compose로 [MainScreen]을 렌더링한다.
+ * [AppState]를 onStart/onStop에서 갱신해 [TimerService]가 알림 표시 여부를 판단한다.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var appState: AppState
 
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+        )
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -70,6 +78,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        appState.isInForeground.value = true
+    }
+
+    override fun onStop() {
+        super.onStop()
+        appState.isInForeground.value = false
     }
 }
 

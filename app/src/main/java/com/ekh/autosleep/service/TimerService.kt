@@ -9,6 +9,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
+import com.ekh.autosleep.AppState
 import com.ekh.autosleep.MainActivity
 import com.ekh.autosleep.R
 import com.ekh.autosleep.domain.entity.TimerState
@@ -20,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,6 +41,7 @@ class TimerService : Service() {
 
     @Inject lateinit var timerRepository: TimerRepository
     @Inject lateinit var executeSleepSequence: ExecuteSleepSequenceUseCase
+    @Inject lateinit var appState: AppState
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var totalMs: Long = 0L
@@ -46,6 +50,9 @@ class TimerService : Service() {
         super.onCreate()
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification("타이머 대기 중"))
+        if (appState.isInForeground.value) {
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        }
         observeTimer()
     }
 
@@ -61,26 +68,36 @@ class TimerService : Service() {
      */
     private fun observeTimer() {
         scope.launch {
-            timerRepository.state.collect { state ->
-                when (state) {
-                    is TimerState.Running -> {
-                        val rem = state.remainingMs
-                        val h = rem / 3_600_000
-                        val m = (rem % 3_600_000) / 60_000
-                        val s = (rem % 60_000) / 1_000
-                        val text = "%02d:%02d:%02d".format(h, m, s)
-                        val progress = if (totalMs > 0) ((totalMs - rem) * 100 / totalMs).toInt() else 0
-                        updateNotification(text, progress)
+            combine(
+                timerRepository.state,
+                appState.isInForeground,
+            ) { state, isForeground -> state to isForeground }
+                .collect { (state, isForeground) ->
+                    when (state) {
+                        is TimerState.Running -> {
+                            val rem = state.remainingMs
+                            val h = rem / 3_600_000
+                            val m = (rem % 3_600_000) / 60_000
+                            val s = (rem % 60_000) / 1_000
+                            val text = "%02d:%02d:%02d".format(h, m, s)
+                            if (isForeground) {
+                                ServiceCompat.stopForeground(
+                                    this@TimerService,
+                                    ServiceCompat.STOP_FOREGROUND_REMOVE,
+                                )
+                            } else {
+                                startForeground(NOTIFICATION_ID, buildNotification(text))
+                            }
+                        }
+                        is TimerState.Expired -> {
+                            startForeground(NOTIFICATION_ID, buildNotification("수면 전환 중..."))
+                            executeSleepSequence()
+                            stopSelf()
+                        }
+                        is TimerState.Cancelled -> stopSelf()
+                        else -> Unit
                     }
-                    is TimerState.Expired -> {
-                        updateNotification("수면 전환 중...", 100)
-                        executeSleepSequence()
-                        stopSelf()
-                    }
-                    is TimerState.Cancelled -> stopSelf()
-                    else -> Unit
                 }
-            }
         }
     }
 
@@ -107,7 +124,7 @@ class TimerService : Service() {
      * 주어진 텍스트와 진행률로 포그라운드 알림을 생성한다.
      * 알림을 탭하면 [MainActivity]로 이동한다.
      */
-    private fun buildNotification(text: String, progress: Int = 0): Notification {
+    private fun buildNotification(text: String, ): Notification {
         val pendingIntent = PendingIntent.getActivity(
             this,
             0,
@@ -121,14 +138,13 @@ class TimerService : Service() {
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setProgress(100, progress, false)
             .build()
     }
 
     /** 기존 포그라운드 알림의 텍스트와 진행률을 갱신한다. */
-    private fun updateNotification(text: String, progress: Int = 0) {
+    private fun updateNotification(text: String) {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(NOTIFICATION_ID, buildNotification(text, progress))
+        manager.notify(NOTIFICATION_ID, buildNotification(text))
     }
 
     companion object {
