@@ -1,6 +1,7 @@
 package com.ekh.autosleep.presentation.permission
 
 import android.content.Intent
+import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,6 +43,7 @@ fun PermissionSetupScreen(
     permissionState: PermissionState,
     onRefresh: () -> Unit,
     onContinue: () -> Unit,
+    onRequestPostNotifications: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -75,20 +77,6 @@ fun PermissionSetupScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 필수 권한 섹션
-        SectionLabel("필수 (화면 끄기)")
-
-        PermissionItem(
-            title = "접근성 서비스",
-            description = "타이머 만료 시 화면을 잠급니다.",
-            granted = permissionState.accessibilityGranted,
-            onSetup = {
-                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            },
-        )
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
         // 선택 권한 섹션
         SectionLabel("선택 (미디어 제어)")
 
@@ -101,14 +89,38 @@ fun PermissionSetupScreen(
             },
         )
 
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+
+        // 필수 권한 섹션
+        SectionLabel("필수 (화면 끄기 / 알림)")
+
+        PermissionItem(
+            title = "접근성 서비스",
+            description = "타이머 만료 시 화면을 잠급니다.",
+            granted = permissionState.accessibilityGranted,
+            onSetup = {
+                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            },
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            PermissionItem(
+                title = "알림 권한",
+                description = "타이머 실행 중 백그라운드 알림을 표시합니다.",
+                granted = permissionState.postNotificationsGranted,
+                onSetup = onRequestPostNotifications,
+            )
+        }
+
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
             onClick = onContinue,
-            enabled = permissionState.canLockScreen,
+            enabled = permissionState.canShowTimer,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (permissionState.canLockScreen) "시작하기" else "접근성 서비스 권한이 필요합니다")
+            Text(if (permissionState.canShowTimer) "시작하기" else "필수 권한이 필요합니다")
         }
     }
 }

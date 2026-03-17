@@ -1,6 +1,9 @@
 package com.ekh.autosleep.data.permission
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.provider.Settings
 import com.ekh.autosleep.domain.entity.PermissionState
 import com.ekh.autosleep.domain.repository.PermissionRepository
@@ -26,7 +29,14 @@ class PermissionRepositoryImpl @Inject constructor(
     override fun getPermissionState(): PermissionState = PermissionState(
         notificationListenerGranted = isNotificationListenerEnabled(),
         accessibilityGranted = SleepAccessibilityService.isConnected(),
+        postNotificationsGranted = isPostNotificationsGranted(),
     )
+
+    private fun isPostNotificationsGranted(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+        return context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+    }
 
     /**
      * [Settings.Secure]의 `enabled_notification_listeners` 값에 현재 패키지가 포함되어 있는지 확인한다.

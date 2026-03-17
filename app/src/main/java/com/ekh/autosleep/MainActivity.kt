@@ -1,7 +1,6 @@
 package com.ekh.autosleep
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -65,16 +64,17 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
-        if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-            && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
         setContent {
             AutoSleepTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MainScreen(modifier = Modifier.padding(innerPadding))
+                    MainScreen(
+                        onRequestPostNotifications = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        },
+                        modifier = Modifier.padding(innerPadding),
+                    )
                 }
             }
         }
@@ -100,6 +100,7 @@ class MainActivity : ComponentActivity() {
  */
 @Composable
 fun MainScreen(
+    onRequestPostNotifications: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MainViewModel = hiltViewModel(),
 ) {
@@ -108,11 +109,12 @@ fun MainScreen(
     val timerDigits by viewModel.timerDigits.collectAsState()
     var setupDone by rememberSaveable { mutableStateOf(false) }
 
-    if (!setupDone && !permissionState.canLockScreen) {
+    if (!setupDone && !permissionState.canShowTimer) {
         PermissionSetupScreen(
             permissionState = permissionState,
             onRefresh = viewModel::refreshPermissions,
             onContinue = { setupDone = true },
+            onRequestPostNotifications = onRequestPostNotifications,
             modifier = modifier,
         )
         return
