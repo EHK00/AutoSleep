@@ -21,11 +21,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.ekh.autosleep.domain.entity.PermissionState
+import com.ekh.autosleep.ui.theme.AutoSleepTheme
 
 /**
  * 앱 최초 실행 시 표시되는 권한 설정 온보딩 화면.
@@ -160,6 +162,32 @@ private fun SectionLabel(text: String) {
  * @param granted 권한 허용 여부.
  * @param onSetup "설정" 버튼 클릭 시 해당 시스템 설정 화면으로 이동하는 콜백.
  */
+@Preview(name = "권한 항목 - 허용됨", showBackground = true)
+@Composable
+private fun PermissionItemGrantedPreview() {
+    AutoSleepTheme {
+        PermissionItem(
+            title = "접근성 서비스",
+            description = "타이머 만료 시 화면을 잠급니다.",
+            granted = true,
+            onSetup = {},
+        )
+    }
+}
+
+@Preview(name = "권한 항목 - 거부됨", showBackground = true)
+@Composable
+private fun PermissionItemDeniedPreview() {
+    AutoSleepTheme {
+        PermissionItem(
+            title = "접근성 서비스",
+            description = "타이머 만료 시 화면을 잠급니다.",
+            granted = false,
+            onSetup = {},
+        )
+    }
+}
+
 @Composable
 private fun PermissionItem(
     title: String,
@@ -199,5 +227,58 @@ private fun PermissionItem(
                 Text("설정")
             }
         }
+    }
+}
+
+// ─── Previews ────────────────────────────────────────────────────────────────
+
+@Preview(name = "권한 설정 - 모든 권한 거부됨", showBackground = true, widthDp = 360, heightDp = 800)
+@Composable
+private fun PermissionSetupAllDeniedPreview() {
+    AutoSleepTheme {
+        PermissionSetupScreen(
+            permissionState = PermissionState(
+                notificationListenerGranted = false,
+                accessibilityGranted = false,
+                postNotificationsGranted = false,
+            ),
+            onRefresh = {},
+            onContinue = {},
+            onRequestPostNotifications = {},
+        )
+    }
+}
+
+@Preview(name = "권한 설정 - 모든 권한 허용됨", showBackground = true, widthDp = 360, heightDp = 800)
+@Composable
+private fun PermissionSetupAllGrantedPreview() {
+    AutoSleepTheme {
+        PermissionSetupScreen(
+            permissionState = PermissionState(
+                notificationListenerGranted = true,
+                accessibilityGranted = true,
+                postNotificationsGranted = true,
+            ),
+            onRefresh = {},
+            onContinue = {},
+            onRequestPostNotifications = {},
+        )
+    }
+}
+
+@Preview(name = "권한 설정 - 필수만 허용됨", showBackground = true, widthDp = 360, heightDp = 800)
+@Composable
+private fun PermissionSetupRequiredOnlyPreview() {
+    AutoSleepTheme {
+        PermissionSetupScreen(
+            permissionState = PermissionState(
+                notificationListenerGranted = false,
+                accessibilityGranted = true,
+                postNotificationsGranted = true,
+            ),
+            onRefresh = {},
+            onContinue = {},
+            onRequestPostNotifications = {},
+        )
     }
 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ekh.autosleep.domain.entity.PermissionState
 import com.ekh.autosleep.domain.entity.TimerConfig
 import com.ekh.autosleep.domain.entity.TimerState
+import com.ekh.autosleep.domain.repository.TimerPresetRepository
 import com.ekh.autosleep.domain.repository.TimerRepository
 import com.ekh.autosleep.domain.usecase.permission.CheckPermissionsUseCase
 import com.ekh.autosleep.domain.usecase.timer.CancelTimerUseCase
@@ -30,6 +31,7 @@ class MainViewModel @Inject constructor(
     private val cancelTimer: CancelTimerUseCase,
     private val checkPermissions: CheckPermissionsUseCase,
     private val timerServiceController: TimerServiceController,
+    private val timerPresetRepository: TimerPresetRepository,
 ) : ViewModel() {
 
     /**
@@ -38,6 +40,10 @@ class MainViewModel @Inject constructor(
      */
     val timerState: StateFlow<TimerState> = timerRepository.state
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimerState.Idle)
+
+    /** 저장된 타이머 프리셋 목록 스트림. */
+    val savedPresets: StateFlow<List<Long>> = timerPresetRepository.presets
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _permissionState = MutableStateFlow(checkPermissions())
 
@@ -108,5 +114,39 @@ class MainViewModel @Inject constructor(
     fun cancelTimer() {
         cancelTimer.invoke()
         timerServiceController.cancel()
+    }
+
+    /**
+     * 현재 입력된 시간을 프리셋으로 저장한다.
+     * @param durationMs 저장할 타이머 시간 (밀리초).
+     */
+    fun savePreset(durationMs: Long) {
+        if (durationMs > 0) timerPresetRepository.save(durationMs)
+    }
+
+    /**
+     * 프리셋을 선택하여 키패드 입력 상태를 해당 시간으로 설정한다.
+     * @param durationMs 선택한 프리셋 시간 (밀리초).
+     */
+    fun selectPreset(durationMs: Long) {
+        _timerDigits.value = durationMs.toDigits()
+    }
+
+    /**
+     * 프리셋을 삭제한다.
+     * @param durationMs 삭제할 프리셋 시간 (밀리초).
+     */
+    fun deletePreset(durationMs: Long) {
+        timerPresetRepository.delete(durationMs)
+    }
+
+    /** 밀리초를 키패드 숫자 목록(최대 6자리)으로 변환한다. */
+    private fun Long.toDigits(): List<Int> {
+        val totalSec = this / 1000
+        val h = totalSec / 3600
+        val m = (totalSec % 3600) / 60
+        val s = totalSec % 60
+        val str = "%02d%02d%02d".format(h, m, s).trimStart('0')
+        return if (str.isEmpty()) emptyList() else str.map { it.digitToInt() }
     }
 }

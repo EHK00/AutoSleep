@@ -148,7 +148,6 @@ class TimerService : Service() {
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE,
         )
-        val expiryTimeSec = expiryTimeMs / 1_000
         val progress = if (totalMs > 0 && remainingMs > 0) {
             ((totalMs - remainingMs).toFloat() / totalMs * 100).toInt().coerceIn(0, 100)
         } else 0

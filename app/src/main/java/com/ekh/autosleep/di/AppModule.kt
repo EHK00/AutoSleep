@@ -1,12 +1,18 @@
 package com.ekh.autosleep.di
 
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import com.ekh.autosleep.data.media.MediaControlRepositoryImpl
 import com.ekh.autosleep.data.permission.PermissionRepositoryImpl
+import com.ekh.autosleep.data.preset.TimerPresetRepositoryImpl
 import com.ekh.autosleep.data.screen.ScreenControlRepositoryImpl
 import com.ekh.autosleep.data.timer.TimerRepositoryImpl
 import com.ekh.autosleep.domain.repository.MediaControlRepository
 import com.ekh.autosleep.domain.repository.PermissionRepository
 import com.ekh.autosleep.domain.repository.ScreenControlRepository
+import com.ekh.autosleep.domain.repository.TimerPresetRepository
 import com.ekh.autosleep.domain.repository.TimerRepository
 import com.ekh.autosleep.domain.usecase.media.PauseAllMediaUseCase
 import com.ekh.autosleep.domain.usecase.media.RequestAudioFocusUseCase
@@ -21,8 +27,13 @@ import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+
+private val Context.timerPresetDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "timer_presets",
+)
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -42,6 +53,9 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindTimerServiceController(impl: TimerServiceControllerImpl): TimerServiceController
+
+    @Binds @Singleton
+    abstract fun bindTimerPresetRepository(impl: TimerPresetRepositoryImpl): TimerPresetRepository
 }
 
 @Module
@@ -65,6 +79,10 @@ object UseCaseModule {
 
     @Provides @Singleton
     fun provideCheckPermissionsUseCase(repo: PermissionRepository) = CheckPermissionsUseCase(repo)
+
+    @Provides @Singleton
+    fun provideTimerPresetDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+        context.timerPresetDataStore
 
     @Provides @Singleton
     fun provideExecuteSleepSequenceUseCase(
