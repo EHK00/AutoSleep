@@ -78,7 +78,7 @@ fun PermissionSetupScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // 선택 권한 섹션
-        SectionLabel("선택 (미디어 제어)")
+        SectionLabel("선택 (미디어 제어 / 상태바)")
 
         PermissionItem(
             title = "알림 리스너",
@@ -88,6 +88,21 @@ fun PermissionSetupScreen(
                 context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
             },
         )
+//
+//        if (Build.VERSION.SDK_INT >= 36) {
+//            PermissionItem(
+//                title = "실시간 정보",
+//                description = "타이머 실행 중 상태바에 남은 시간을 표시합니다.",
+//                granted = permissionState.promotedNotificationsGranted,
+//                onSetup = {
+//                    context.startActivity(
+//                        Intent(Settings.ACTION_MANAGE_APP_PROMOTED_NOTIFICATIONS).apply {
+//                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+//                        }
+//                    )
+//                },
+//            )
+//        }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 

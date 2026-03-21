@@ -1,6 +1,7 @@
 package com.ekh.autosleep.data.permission
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -30,7 +31,14 @@ class PermissionRepositoryImpl @Inject constructor(
         notificationListenerGranted = isNotificationListenerEnabled(),
         accessibilityGranted = SleepAccessibilityService.isConnected(),
         postNotificationsGranted = isPostNotificationsGranted(),
+        promotedNotificationsGranted = isPromotedNotificationsGranted(),
     )
+
+    private fun isPromotedNotificationsGranted(): Boolean {
+        if (Build.VERSION.SDK_INT < 36) return true
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        return nm.canPostPromotedNotifications()
+    }
 
     private fun isPostNotificationsGranted(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true

@@ -98,7 +98,7 @@ class MainViewModel @Inject constructor(
      */
     fun startTimer(durationMs: Long) {
         _timerDigits.value = emptyList()
-        startTimer(TimerConfig(durationMs))
+        startTimer.invoke(TimerConfig(durationMs))
         timerServiceController.start(durationMs)
     }
 

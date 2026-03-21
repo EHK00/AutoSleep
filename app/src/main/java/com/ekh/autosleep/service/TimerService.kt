@@ -7,7 +7,9 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import com.ekh.autosleep.AppState
@@ -22,7 +24,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -39,15 +41,23 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class TimerService : Service() {
 
-    @Inject lateinit var timerRepository: TimerRepository
-    @Inject lateinit var executeSleepSequence: ExecuteSleepSequenceUseCase
-    @Inject lateinit var appState: AppState
+    @Inject
+    lateinit var timerRepository: TimerRepository
+
+    @Inject
+    lateinit var executeSleepSequence: ExecuteSleepSequenceUseCase
+
+    @Inject
+    lateinit var appState: AppState
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var totalMs: Long = 0L
+    private lateinit var notificationManager: NotificationManager
+    private var isStarted = false
 
     override fun onCreate() {
         super.onCreate()
+        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification("타이머 대기 중"))
         if (appState.isInForeground.value) {
@@ -67,37 +77,39 @@ class TimerService : Service() {
      * 만료 시 [ExecuteSleepSequenceUseCase]를 호출한 뒤 [stopSelf]로 서비스를 종료한다.
      */
     private fun observeTimer() {
+        Log.d("LiveUpdate", "SDK_INT: ${Build.VERSION.SDK_INT}") // 35 = Android 15, 36 = Android 16
+        if (Build.VERSION.SDK_INT >= 36) {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            Log.d("LiveUpdate", "canPostPromotedNotifications: ${nm.canPostPromotedNotifications()}")
+        } else {
+            Log.d("LiveUpdate", "canPostPromotedNotifications API not available (< 36)")
+        }
         scope.launch {
-            combine(
-                timerRepository.state,
-                appState.isInForeground,
-            ) { state, isForeground -> state to isForeground }
-                .collect { (state, isForeground) ->
-                    when (state) {
-                        is TimerState.Running -> {
-                            val rem = state.remainingMs
-                            val h = rem / 3_600_000
-                            val m = (rem % 3_600_000) / 60_000
-                            val s = (rem % 60_000) / 1_000
-                            val text = "%02d:%02d:%02d".format(h, m, s)
-                            if (isForeground) {
-                                ServiceCompat.stopForeground(
-                                    this@TimerService,
-                                    ServiceCompat.STOP_FOREGROUND_REMOVE,
-                                )
-                            } else {
-                                startForeground(NOTIFICATION_ID, buildNotification(text))
-                            }
+            timerRepository.state.collectLatest { state ->
+                when (state) {
+                    is TimerState.Running -> {
+                        val expiryTimeMs = System.currentTimeMillis() + state.remainingMs
+                        val notification = buildNotification(
+                            text = "수면까지 카운트다운 중",
+                            expiryTimeMs = expiryTimeMs,
+                            remainingMs = state.remainingMs,
+                        )
+                        if (!isStarted) {
+                            startForeground(NOTIFICATION_ID, notification)
+                            isStarted = true
+                        } else {
+                            notificationManager.notify(NOTIFICATION_ID, notification)
                         }
-                        is TimerState.Expired -> {
-                            startForeground(NOTIFICATION_ID, buildNotification("수면 전환 중..."))
-                            executeSleepSequence()
-                            stopSelf()
-                        }
-                        is TimerState.Cancelled -> stopSelf()
-                        else -> Unit
                     }
+                    is TimerState.Expired -> {
+                        startForeground(NOTIFICATION_ID, buildNotification("수면 전환 중..."))
+                        executeSleepSequence()
+                        stopSelf()
+                    }
+                    is TimerState.Cancelled -> stopSelf()
+                    else -> Unit
                 }
+            }
         }
     }
 
@@ -112,44 +124,54 @@ class TimerService : Service() {
     /** 포그라운드 서비스 알림 채널을 생성한다. Android 8+ 필수. */
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
-            CHANNEL_ID,
-            "자동 수면 타이머",
-            NotificationManager.IMPORTANCE_LOW,
+            /* id = */ CHANNEL_ID,
+            /* name = */ "자동 수면 타이머",
+            /* importance = */ NotificationManager.IMPORTANCE_DEFAULT,
         )
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
     }
 
     /**
-     * 주어진 텍스트와 진행률로 포그라운드 알림을 생성한다.
-     * 알림을 탭하면 [MainActivity]로 이동한다.
+     * 포그라운드 알림을 생성한다.
+     * [expiryTimeMs]가 0보다 크면 Chronometer 카운트다운을 활성화해 상태바 chip에 표시된다.
+     * [remainingMs]가 0보다 크면 ProgressStyle로 경과 진행률을 표시한다.
      */
-    private fun buildNotification(text: String, ): Notification {
+    private fun buildNotification(
+        text: String,
+        expiryTimeMs: Long = 0L,
+        remainingMs: Long = 0L,
+    ): Notification {
         val pendingIntent = PendingIntent.getActivity(
             this,
             0,
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE,
         )
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val expiryTimeSec = expiryTimeMs / 1_000
+        val progress = if (totalMs > 0 && remainingMs > 0) {
+            ((totalMs - remainingMs).toFloat() / totalMs * 100).toInt().coerceIn(0, 100)
+        } else 0
+        val progressStyle = NotificationCompat.ProgressStyle()
+            .setProgress(progress)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("AutoSleep 타이머")
             .setContentText(text)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .build()
-    }
-
-    /** 기존 포그라운드 알림의 텍스트와 진행률을 갱신한다. */
-    private fun updateNotification(text: String) {
-        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(NOTIFICATION_ID, buildNotification(text))
+            .setWhen(expiryTimeMs)
+            .setUsesChronometer(expiryTimeMs > 0)
+            .setChronometerCountDown(true)
+            .setRequestPromotedOngoing(true)
+            .setStyle(progressStyle)
+        return builder.build()
     }
 
     companion object {
-        private const val CHANNEL_ID = "autosleep_timer"
-        private const val NOTIFICATION_ID = 1001
+        private const val CHANNEL_ID = "autosleep_timer6"
+        private const val NOTIFICATION_ID = 1002
 
         /** 타이머 총 시간(ms)을 전달하는 Intent extra 키. */
         const val EXTRA_DURATION_MS = "extra_duration_ms"

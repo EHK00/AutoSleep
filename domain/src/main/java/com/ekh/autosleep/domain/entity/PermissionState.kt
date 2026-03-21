@@ -12,6 +12,7 @@ data class PermissionState(
     val notificationListenerGranted: Boolean,
     val accessibilityGranted: Boolean,
     val postNotificationsGranted: Boolean = true,
+    val promotedNotificationsGranted: Boolean = true,
 ) {
     /** NotificationListenerService가 활성화되어 미디어 세션을 제어할 수 있는 경우 true. */
     val canControlMedia: Boolean get() = notificationListenerGranted
