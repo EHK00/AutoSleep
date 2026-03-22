@@ -15,6 +15,7 @@ import androidx.core.app.ServiceCompat
 import com.ekh.autosleep.AppState
 import com.ekh.autosleep.MainActivity
 import com.ekh.autosleep.R
+import com.ekh.autosleep.domain.entity.TimerConfig
 import com.ekh.autosleep.domain.entity.TimerState
 import com.ekh.autosleep.domain.repository.TimerRepository
 import com.ekh.autosleep.domain.usecase.sleep.ExecuteSleepSequenceUseCase
@@ -70,6 +71,13 @@ class TimerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_CANCEL) {
             timerRepository.cancel()
+            return START_NOT_STICKY
+        }
+        if (intent?.action == ACTION_EXTEND) {
+            val current = timerRepository.state.value
+            if (current is TimerState.Running) {
+                timerRepository.start(TimerConfig(current.remainingMs + EXTEND_MS))
+            }
             return START_NOT_STICKY
         }
         totalMs = intent?.getLongExtra(EXTRA_DURATION_MS, 0L) ?: 0L
@@ -157,6 +165,11 @@ class TimerService : Service() {
             Intent(this, TimerService::class.java).setAction(ACTION_CANCEL),
             PendingIntent.FLAG_IMMUTABLE,
         )
+        val extendIntent = PendingIntent.getService(
+            this, 2,
+            Intent(this, TimerService::class.java).setAction(ACTION_EXTEND),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
         val metric = if (remainingMs > 0) formatRemainingTime(remainingMs) else text
 
 //        if (Build.VERSION.SDK_INT >= 36) {
@@ -179,6 +192,7 @@ class TimerService : Service() {
             .setContentIntent(contentIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .addAction(NotificationCompat.Action(0, "+10분", extendIntent))
             .addAction(NotificationCompat.Action(0, "취소", cancelIntent))
             .build()
     }
@@ -204,5 +218,11 @@ class TimerService : Service() {
 
         /** 알림 취소 버튼에서 사용하는 Intent action. */
         const val ACTION_CANCEL = "com.ekh.autosleep.ACTION_CANCEL_TIMER"
+
+        /** 알림 연장 버튼에서 사용하는 Intent action. */
+        const val ACTION_EXTEND = "com.ekh.autosleep.ACTION_EXTEND_TIMER"
+
+        /** 연장하기 버튼으로 추가되는 시간 (10분). */
+        private const val EXTEND_MS = 10 * 60 * 1000L
     }
 }
