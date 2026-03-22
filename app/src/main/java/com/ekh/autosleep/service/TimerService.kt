@@ -66,8 +66,12 @@ class TimerService : Service() {
         observeTimer()
     }
 
-    /** [EXTRA_DURATION_MS] extra에서 총 타이머 시간을 읽어 저장한다. */
+    /** [EXTRA_DURATION_MS] extra에서 총 타이머 시간을 읽어 저장한다. 취소 액션은 즉시 처리한다. */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_CANCEL) {
+            timerRepository.cancel()
+            return START_NOT_STICKY
+        }
         totalMs = intent?.getLongExtra(EXTRA_DURATION_MS, 0L) ?: 0L
         return START_STICKY
     }
@@ -134,45 +138,71 @@ class TimerService : Service() {
 
     /**
      * 포그라운드 알림을 생성한다.
-     * [expiryTimeMs]가 0보다 크면 Chronometer 카운트다운을 활성화해 상태바 chip에 표시된다.
-     * [remainingMs]가 0보다 크면 ProgressStyle로 경과 진행률을 표시한다.
+     * API 36+: MetricStyle로 남은 시간을 크게 표시한다.
+     * API < 36: BigTextStyle 폴백.
+     * 두 경우 모두 취소 액션 버튼을 제공한다.
      */
     private fun buildNotification(
         text: String,
         expiryTimeMs: Long = 0L,
         remainingMs: Long = 0L,
     ): Notification {
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
+        val contentIntent = PendingIntent.getActivity(
+            this, 0,
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE,
         )
-        val progress = if (totalMs > 0 && remainingMs > 0) {
-            ((totalMs - remainingMs).toFloat() / totalMs * 100).toInt().coerceIn(0, 100)
-        } else 0
-        val progressStyle = NotificationCompat.ProgressStyle()
-            .setProgress(progress)
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("AutoSleep 타이머")
-            .setContentText(text)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentIntent(pendingIntent)
+        val cancelIntent = PendingIntent.getService(
+            this, 1,
+            Intent(this, TimerService::class.java).setAction(ACTION_CANCEL),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+        val metric = if (remainingMs > 0) formatRemainingTime(remainingMs) else text
+
+//        if (Build.VERSION.SDK_INT >= 36) {
+//            return Notification.Builder(this, CHANNEL_ID)
+//                .setContentTitle("AutoSleep 타이머")
+//                .setSmallIcon(R.drawable.ic_stat_name)
+//                .setContentIntent(contentIntent)
+//                .setOngoing(true)
+//                .setOnlyAlertOnce(true)
+//                .setStyle(Notification.MetricStyle().setMetric(metric))
+//                .addAction(
+//                    Notification.Action.Builder(null, "취소", cancelIntent).build()
+//                )
+//                .build()
+//        }
+
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("남은 시간: $metric")
+            .setSmallIcon(R.drawable.ic_stat_name)
+            .setContentIntent(contentIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setWhen(expiryTimeMs)
-            .setUsesChronometer(expiryTimeMs > 0)
-            .setChronometerCountDown(true)
-            .setRequestPromotedOngoing(true)
-            .setStyle(progressStyle)
-        return builder.build()
+            .addAction(NotificationCompat.Action(0, "취소", cancelIntent))
+            .build()
+    }
+
+    private fun formatRemainingTime(remainingMs: Long): String {
+        val totalSec = remainingMs / 1000
+        val h = totalSec / 3600
+        val m = (totalSec % 3600) / 60
+        val s = totalSec % 60
+        return when {
+            h > 0 -> "%d:%02d:%02d".format(h, m, s)
+            m > 0 -> "%02d:%02d".format(m, s)
+            else -> "${s}초"
+        }
     }
 
     companion object {
-        private const val CHANNEL_ID = "autosleep_timer6"
-        private const val NOTIFICATION_ID = 1002
+        private const val CHANNEL_ID = "autosleep_timer"
+        private const val NOTIFICATION_ID = 1010
 
         /** 타이머 총 시간(ms)을 전달하는 Intent extra 키. */
         const val EXTRA_DURATION_MS = "extra_duration_ms"
+
+        /** 알림 취소 버튼에서 사용하는 Intent action. */
+        const val ACTION_CANCEL = "com.ekh.autosleep.ACTION_CANCEL_TIMER"
     }
 }
