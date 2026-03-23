@@ -9,7 +9,7 @@ plugins {
 android {
     namespace = "com.ekh.autosleep"
     compileSdk {
-        version = release(36)
+        version = release(28)
     }
 
     defaultConfig {
