@@ -9,7 +9,7 @@ plugins {
 android {
     namespace = "com.ekh.autosleep"
     compileSdk {
-        version = release(28)
+        version = release(36)
     }
 
     defaultConfig {
@@ -55,6 +55,7 @@ dependencies {
 
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.androidx.navigation.compose)
     ksp(libs.hilt.compiler)
 
     implementation(libs.kotlinx.coroutines.android)

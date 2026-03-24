@@ -18,11 +18,14 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -33,28 +36,30 @@ import com.ekh.autosleep.ui.theme.AutoSleepTheme
  * 앱 최초 실행 시 표시되는 권한 설정 온보딩 화면.
  *
  * 두 가지 권한을 필수/선택으로 나누어 안내하며, 각 항목에 ✓/✗ 상태와 설정 버튼을 표시한다.
- * 화면 복귀 시([Lifecycle.Event.ON_RESUME]) [onRefresh]를 호출하여 권한 상태를 자동으로 갱신한다.
- * [PermissionState.canLockScreen]이 true일 때만 "시작하기" 버튼이 활성화된다.
+ * 화면 복귀 시([Lifecycle.Event.ON_RESUME]) [PermissionViewModel.refreshPermissions]를 호출하여 권한 상태를 자동으로 갱신한다.
+ * [PermissionState.canShowTimer]이 true일 때만 "시작하기" 버튼이 활성화된다.
  *
- * @param permissionState 현재 권한 허용 상태.
- * @param onRefresh 권한 상태를 재조회하도록 ViewModel에 요청하는 콜백.
  * @param onContinue 권한 설정 완료 후 메인 화면으로 진입하는 콜백.
+ * @param onRequestPostNotifications 알림 권한 요청 콜백.
+ * @param onClose 설정 화면에서 닫기 버튼 클릭 시 콜백 (null이면 닫기 버튼 미표시).
+ * @param viewModel 권한 상태를 관리하는 [PermissionViewModel].
  */
 @Composable
 fun PermissionSetupScreen(
-    permissionState: PermissionState,
-    onRefresh: () -> Unit,
     onContinue: () -> Unit,
     onRequestPostNotifications: () -> Unit,
     modifier: Modifier = Modifier,
+    onClose: (() -> Unit)? = null,
+    viewModel: PermissionViewModel = hiltViewModel(),
 ) {
+    val permissionState by viewModel.permissionState.collectAsState()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // 설정 화면에서 돌아올 때마다 권한 상태 갱신
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) onRefresh()
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.refreshPermissions()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -90,21 +95,6 @@ fun PermissionSetupScreen(
                 context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
             },
         )
-//
-//        if (Build.VERSION.SDK_INT >= 36) {
-//            PermissionItem(
-//                title = "실시간 정보",
-//                description = "타이머 실행 중 상태바에 남은 시간을 표시합니다.",
-//                granted = permissionState.promotedNotificationsGranted,
-//                onSetup = {
-//                    context.startActivity(
-//                        Intent(Settings.ACTION_MANAGE_APP_PROMOTED_NOTIFICATIONS).apply {
-//                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-//                        }
-//                    )
-//                },
-//            )
-//        }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -132,12 +122,21 @@ fun PermissionSetupScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Button(
-            onClick = onContinue,
-            enabled = permissionState.canShowTimer,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(if (permissionState.canShowTimer) "시작하기" else "필수 권한이 필요합니다")
+        if (onClose != null) {
+            OutlinedButton(
+                onClick = onClose,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("닫기")
+            }
+        } else {
+            Button(
+                onClick = onContinue,
+                enabled = permissionState.canShowTimer,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (permissionState.canShowTimer) "시작하기" else "필수 권한이 필요합니다")
+            }
         }
     }
 }
@@ -162,32 +161,6 @@ private fun SectionLabel(text: String) {
  * @param granted 권한 허용 여부.
  * @param onSetup "설정" 버튼 클릭 시 해당 시스템 설정 화면으로 이동하는 콜백.
  */
-@Preview(name = "권한 항목 - 허용됨", showBackground = true)
-@Composable
-private fun PermissionItemGrantedPreview() {
-    AutoSleepTheme {
-        PermissionItem(
-            title = "접근성 서비스",
-            description = "타이머 만료 시 화면을 잠급니다.",
-            granted = true,
-            onSetup = {},
-        )
-    }
-}
-
-@Preview(name = "권한 항목 - 거부됨", showBackground = true)
-@Composable
-private fun PermissionItemDeniedPreview() {
-    AutoSleepTheme {
-        PermissionItem(
-            title = "접근성 서비스",
-            description = "타이머 만료 시 화면을 잠급니다.",
-            granted = false,
-            onSetup = {},
-        )
-    }
-}
-
 @Composable
 private fun PermissionItem(
     title: String,
@@ -232,53 +205,28 @@ private fun PermissionItem(
 
 // ─── Previews ────────────────────────────────────────────────────────────────
 
-@Preview(name = "권한 설정 - 모든 권한 거부됨", showBackground = true, widthDp = 360, heightDp = 800)
+@Preview(name = "권한 항목 - 허용됨", showBackground = true)
 @Composable
-private fun PermissionSetupAllDeniedPreview() {
+private fun PermissionItemGrantedPreview() {
     AutoSleepTheme {
-        PermissionSetupScreen(
-            permissionState = PermissionState(
-                notificationListenerGranted = false,
-                accessibilityGranted = false,
-                postNotificationsGranted = false,
-            ),
-            onRefresh = {},
-            onContinue = {},
-            onRequestPostNotifications = {},
+        PermissionItem(
+            title = "접근성 서비스",
+            description = "타이머 만료 시 화면을 잠급니다.",
+            granted = true,
+            onSetup = {},
         )
     }
 }
 
-@Preview(name = "권한 설정 - 모든 권한 허용됨", showBackground = true, widthDp = 360, heightDp = 800)
+@Preview(name = "권한 항목 - 거부됨", showBackground = true)
 @Composable
-private fun PermissionSetupAllGrantedPreview() {
+private fun PermissionItemDeniedPreview() {
     AutoSleepTheme {
-        PermissionSetupScreen(
-            permissionState = PermissionState(
-                notificationListenerGranted = true,
-                accessibilityGranted = true,
-                postNotificationsGranted = true,
-            ),
-            onRefresh = {},
-            onContinue = {},
-            onRequestPostNotifications = {},
-        )
-    }
-}
-
-@Preview(name = "권한 설정 - 필수만 허용됨", showBackground = true, widthDp = 360, heightDp = 800)
-@Composable
-private fun PermissionSetupRequiredOnlyPreview() {
-    AutoSleepTheme {
-        PermissionSetupScreen(
-            permissionState = PermissionState(
-                notificationListenerGranted = false,
-                accessibilityGranted = true,
-                postNotificationsGranted = true,
-            ),
-            onRefresh = {},
-            onContinue = {},
-            onRequestPostNotifications = {},
+        PermissionItem(
+            title = "접근성 서비스",
+            description = "타이머 만료 시 화면을 잠급니다.",
+            granted = false,
+            onSetup = {},
         )
     }
 }
