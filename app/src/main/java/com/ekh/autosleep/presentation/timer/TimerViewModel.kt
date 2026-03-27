@@ -2,6 +2,8 @@ package com.ekh.autosleep.presentation.timer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ekh.autosleep.data.settings.SettingsRepository
+import com.ekh.autosleep.data.settings.TimeFormat
 import com.ekh.autosleep.domain.entity.TimerConfig
 import com.ekh.autosleep.domain.entity.TimerState
 import com.ekh.autosleep.domain.repository.TimerPresetRepository
@@ -29,6 +31,7 @@ class TimerViewModel @Inject constructor(
     private val cancelTimer: CancelTimerUseCase,
     private val timerServiceController: TimerServiceController,
     private val timerPresetRepository: TimerPresetRepository,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     /**
@@ -41,6 +44,10 @@ class TimerViewModel @Inject constructor(
     /** 저장된 타이머 프리셋 목록 스트림. */
     val savedPresets: StateFlow<List<Long>> = timerPresetRepository.presets
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** 프리셋 시간 표시 형식 스트림. */
+    val timeFormat: StateFlow<TimeFormat> = settingsRepository.timeFormat
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimeFormat.KOREAN)
 
     private val _timerDigits = MutableStateFlow<List<Int>>(emptyList())
 

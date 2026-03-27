@@ -4,19 +4,31 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.room.Room
 import com.ekh.autosleep.data.media.MediaControlRepositoryImpl
 import com.ekh.autosleep.data.permission.PermissionRepositoryImpl
 import com.ekh.autosleep.data.preset.TimerPresetRepositoryImpl
+import com.ekh.autosleep.data.routine.RoutineRepositoryImpl
+import com.ekh.autosleep.data.routine.db.RoutineDao
+import com.ekh.autosleep.data.routine.db.RoutineDatabase
 import com.ekh.autosleep.data.screen.ScreenControlRepositoryImpl
+import com.ekh.autosleep.data.settings.SettingsRepository
+import com.ekh.autosleep.data.settings.SettingsRepositoryImpl
 import com.ekh.autosleep.data.timer.TimerRepositoryImpl
 import com.ekh.autosleep.domain.repository.MediaControlRepository
 import com.ekh.autosleep.domain.repository.PermissionRepository
+import com.ekh.autosleep.domain.repository.RoutineRepository
 import com.ekh.autosleep.domain.repository.ScreenControlRepository
 import com.ekh.autosleep.domain.repository.TimerPresetRepository
 import com.ekh.autosleep.domain.repository.TimerRepository
 import com.ekh.autosleep.domain.usecase.media.PauseAllMediaUseCase
 import com.ekh.autosleep.domain.usecase.media.RequestAudioFocusUseCase
 import com.ekh.autosleep.domain.usecase.permission.CheckPermissionsUseCase
+import com.ekh.autosleep.domain.usecase.routine.AddRoutineUseCase
+import com.ekh.autosleep.domain.usecase.routine.DeleteRoutineUseCase
+import com.ekh.autosleep.domain.usecase.routine.GetRoutinesUseCase
+import com.ekh.autosleep.domain.usecase.routine.ToggleRoutineUseCase
+import com.ekh.autosleep.domain.usecase.routine.UpdateRoutineUseCase
 import com.ekh.autosleep.domain.usecase.screen.LockScreenUseCase
 import com.ekh.autosleep.domain.usecase.sleep.ExecuteSleepSequenceUseCase
 import com.ekh.autosleep.domain.usecase.timer.CancelTimerUseCase
@@ -56,6 +68,12 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindTimerPresetRepository(impl: TimerPresetRepositoryImpl): TimerPresetRepository
+
+    @Binds @Singleton
+    abstract fun bindSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository
+
+    @Binds @Singleton
+    abstract fun bindRoutineRepository(impl: RoutineRepositoryImpl): RoutineRepository
 }
 
 @Module
@@ -90,4 +108,26 @@ object UseCaseModule {
         requestAudioFocus: RequestAudioFocusUseCase,
         lockScreen: LockScreenUseCase,
     ) = ExecuteSleepSequenceUseCase(pauseAllMedia, requestAudioFocus, lockScreen)
+
+    @Provides @Singleton
+    fun provideRoutineDatabase(@ApplicationContext context: Context): RoutineDatabase =
+        Room.databaseBuilder(context, RoutineDatabase::class.java, "routine_db").build()
+
+    @Provides @Singleton
+    fun provideRoutineDao(db: RoutineDatabase): RoutineDao = db.routineDao()
+
+    @Provides @Singleton
+    fun provideGetRoutinesUseCase(repo: RoutineRepository) = GetRoutinesUseCase(repo)
+
+    @Provides @Singleton
+    fun provideAddRoutineUseCase(repo: RoutineRepository) = AddRoutineUseCase(repo)
+
+    @Provides @Singleton
+    fun provideUpdateRoutineUseCase(repo: RoutineRepository) = UpdateRoutineUseCase(repo)
+
+    @Provides @Singleton
+    fun provideDeleteRoutineUseCase(repo: RoutineRepository) = DeleteRoutineUseCase(repo)
+
+    @Provides @Singleton
+    fun provideToggleRoutineUseCase(repo: RoutineRepository) = ToggleRoutineUseCase(repo)
 }

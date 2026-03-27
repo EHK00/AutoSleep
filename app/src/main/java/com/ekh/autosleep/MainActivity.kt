@@ -9,9 +9,20 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,7 +30,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,13 +57,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.ekh.autosleep.domain.entity.TimerState
 import com.ekh.autosleep.presentation.permission.PermissionSetupScreen
 import com.ekh.autosleep.presentation.permission.PermissionViewModel
+import com.ekh.autosleep.presentation.routine.RoutineEditScreen
+import com.ekh.autosleep.presentation.routine.RoutineScreen
 import com.ekh.autosleep.presentation.settings.SettingsScreen
 import com.ekh.autosleep.presentation.timer.TimerScreen
 import com.ekh.autosleep.presentation.timer.TimerViewModel
@@ -61,6 +79,8 @@ private data class NavTab(val route: String, @DrawableRes val iconRes: Int, val 
 
 private object AppRoute {
     const val TIMER = "timer"
+    const val ROUTINE = "routine"
+    const val ROUTINE_EDIT = "routine_edit"
     const val SETTINGS = "settings"
     const val PERMISSIONS = "permissions"
 }
@@ -135,12 +155,18 @@ fun MainScreen(
 
     val isFirstRunPermission = !setupDone && !permissionState.canShowTimer
     val isTimerRunning = timerState is TimerState.Running
-    val showBottomBar = !isFirstRunPermission && !isTimerRunning && currentRoute != AppRoute.PERMISSIONS
+    val showBottomBar = !isFirstRunPermission && !isTimerRunning
+        && currentRoute != AppRoute.PERMISSIONS
+        && currentRoute != AppRoute.ROUTINE_EDIT
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
-            if (showBottomBar) {
+            AnimatedVisibility(
+                visible = showBottomBar,
+                enter = slideInVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) { it } + fadeIn(tween(200)),
+                exit = ExitTransition.None,
+            ) {
                 AppBottomNavBar(
                     currentRoute = currentRoute,
                     onTabSelected = { route ->
@@ -198,6 +224,20 @@ fun MainScreen(
                 composable(AppRoute.TIMER) {
                     TimerScreen(viewModel = timerViewModel)
                 }
+                if (BuildConfig.ROUTINE_FEATURE_ENABLED) {
+                    composable(AppRoute.ROUTINE) {
+                        RoutineScreen(
+                            onAddRoutine = { navController.navigate("${AppRoute.ROUTINE_EDIT}/-1") },
+                            onEditRoutine = { id: Long -> navController.navigate("${AppRoute.ROUTINE_EDIT}/$id") },
+                        )
+                    }
+                    composable(
+                        route = "${AppRoute.ROUTINE_EDIT}/{routineId}",
+                        arguments = listOf(navArgument("routineId") { type = NavType.LongType }),
+                    ) {
+                        RoutineEditScreen(onBack = { navController.popBackStack() })
+                    }
+                }
                 composable(AppRoute.SETTINGS) {
                     SettingsScreen(
                         onCheckPermissions = {
@@ -224,18 +264,25 @@ private fun AppBottomNavBar(
     currentRoute: String?,
     onTabSelected: (String) -> Unit,
 ) {
-    val tabs = listOf(
-        NavTab(AppRoute.TIMER, R.drawable.ic_timer_bottom_nav, "타이머"),
-        NavTab(AppRoute.SETTINGS, R.drawable.ic_settings_bottom_nav, "설정"),
-    )
+    val tabs = buildList {
+        add(NavTab(AppRoute.TIMER, R.drawable.ic_timer_bottom_nav, "타이머"))
+        if (BuildConfig.ROUTINE_FEATURE_ENABLED) {
+            add(NavTab(AppRoute.ROUTINE, R.drawable.ic_routine_bottom_nav, "루틴"))
+        }
+        add(NavTab(AppRoute.SETTINGS, R.drawable.ic_settings_bottom_nav, "설정"))
+    }
 
     Column {
         HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
-        Row(modifier = Modifier.fillMaxWidth(),) {
+        Row(modifier = Modifier.fillMaxWidth()) {
             tabs.forEach { tab ->
                 val selected = currentRoute == tab.route
-                val tint = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant
+                val tint by animateColorAsState(
+                    targetValue = if (selected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    animationSpec = tween(durationMillis = 250),
+                    label = "tabTint",
+                )
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
@@ -248,14 +295,31 @@ private fun AppBottomNavBar(
                         ) {
                             onTabSelected(tab.route)
                         }
-                        .padding(vertical = 8.dp)
-                    ,
+                        .padding(vertical = 8.dp),
                 ) {
-                    Icon(
-                        painter = painterResource(tab.iconRes),
-                        contentDescription = tab.label,
-                        tint = tint,
+                    val indicatorAlpha by animateFloatAsState(
+                        targetValue = if (selected) 1f else 0f,
+                        animationSpec = tween(durationMillis = 200),
+                        label = "indicatorAlpha",
                     )
+                    Box(contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(28.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f * indicatorAlpha),
+                                    shape = RoundedCornerShape(50),
+                                ),
+                        )
+                        Icon(
+                            painter = painterResource(tab.iconRes),
+                            contentDescription = tab.label,
+                            tint = tint,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(tab.label, fontSize = 10.sp, color = tint)
                 }
             }

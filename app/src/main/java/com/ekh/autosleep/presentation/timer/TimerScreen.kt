@@ -43,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ekh.autosleep.data.settings.TimeFormat
 import com.ekh.autosleep.ui.theme.AutoSleepTheme
 
 /**
@@ -56,6 +57,7 @@ fun TimerScreen(
 ) {
     val timerDigits by viewModel.timerDigits.collectAsState()
     val savedPresets by viewModel.savedPresets.collectAsState()
+    val timeFormat by viewModel.timeFormat.collectAsState()
     val durationMs = timerDigits.toDurationMs()
     var isTimerFocused by rememberSaveable { mutableStateOf(false) }
 
@@ -110,6 +112,7 @@ fun TimerScreen(
                 } else {
                     PresetList(
                         presets = savedPresets,
+                        timeFormat = timeFormat,
                         onSelect = viewModel::selectPreset,
                         onDelete = viewModel::deletePreset,
                         modifier = Modifier
@@ -154,6 +157,7 @@ fun TimerScreen(
 @Composable
 private fun PresetList(
     presets: List<Long>,
+    timeFormat: TimeFormat,
     onSelect: (Long) -> Unit,
     onDelete: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -181,7 +185,7 @@ private fun PresetList(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = formatPresetLabel(durationMs),
+                        text = formatPresetLabel(durationMs, timeFormat),
                         fontSize = 18.sp,
                         modifier = Modifier.weight(1f),
                     )
@@ -223,7 +227,7 @@ private fun TimerInputDisplay(digits: List<Int>) {
  * 1–9, "00", 0, ⌫ 버튼을 3×4 그리드로 배치한다.
  */
 @Composable
-private fun TimerInputPad(
+internal fun TimerInputPad(
     onDigit: (Int) -> Unit,
     onDoubleZero: () -> Unit,
     onDelete: () -> Unit,
@@ -260,21 +264,24 @@ private fun TimerInputPad(
     }
 }
 
-/** 밀리초를 "1시간 30분" 형식의 사람이 읽기 쉬운 문자열로 변환한다. */
-private fun formatPresetLabel(durationMs: Long): String {
+/** 밀리초를 설정된 형식의 문자열로 변환한다. */
+private fun formatPresetLabel(durationMs: Long, format: TimeFormat): String {
     val totalSec = durationMs / 1000
     val h = totalSec / 3600
     val m = (totalSec % 3600) / 60
     val s = totalSec % 60
-    return buildString {
-        if (h > 0) append("${h}시간")
-        if (m > 0) {
-            if (isNotEmpty()) append(" "); append("${m}분")
+    return when (format) {
+        TimeFormat.CLOCK -> "%02d:%02d:%02d".format(h, m, s)
+        TimeFormat.KOREAN -> buildString {
+            if (h > 0) append("${h}시간")
+            if (m > 0) {
+                if (isNotEmpty()) append(" "); append("${m}분")
+            }
+            if (s > 0) {
+                if (isNotEmpty()) append(" "); append("${s}초")
+            }
+            if (isEmpty()) append("0초")
         }
-        if (s > 0) {
-            if (isNotEmpty()) append(" "); append("${s}초")
-        }
-        if (isEmpty()) append("0초")
     }
 }
 
@@ -318,7 +325,7 @@ private fun TimerInputDisplayFilledPreview() {
 @Composable
 private fun PresetListEmptyPreview() {
     AutoSleepTheme {
-        PresetList(presets = emptyList(), onSelect = {}, onDelete = {})
+        PresetList(presets = emptyList(), timeFormat = TimeFormat.KOREAN, onSelect = {}, onDelete = {})
     }
 }
 
@@ -332,6 +339,7 @@ private fun PresetListFilledPreview() {
                 1 * 3600 * 1000L,
                 1 * 3600 * 1000L + 30 * 60 * 1000L,
             ),
+            timeFormat = TimeFormat.KOREAN,
             onSelect = {},
             onDelete = {},
         )
