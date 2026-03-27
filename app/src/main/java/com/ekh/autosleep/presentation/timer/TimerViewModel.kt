@@ -1,13 +1,13 @@
-package com.ekh.autosleep.presentation.main
+package com.ekh.autosleep.presentation.timer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ekh.autosleep.domain.entity.PermissionState
+import com.ekh.autosleep.data.settings.SettingsRepository
+import com.ekh.autosleep.data.settings.TimeFormat
 import com.ekh.autosleep.domain.entity.TimerConfig
 import com.ekh.autosleep.domain.entity.TimerState
 import com.ekh.autosleep.domain.repository.TimerPresetRepository
 import com.ekh.autosleep.domain.repository.TimerRepository
-import com.ekh.autosleep.domain.usecase.permission.CheckPermissionsUseCase
 import com.ekh.autosleep.domain.usecase.timer.CancelTimerUseCase
 import com.ekh.autosleep.domain.usecase.timer.StartTimerUseCase
 import com.ekh.autosleep.service.TimerServiceController
@@ -20,18 +20,18 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 /**
- * 메인 화면의 상태를 관리하는 ViewModel.
- * 타이머 상태([timerState])와 권한 상태([permissionState])를 UI에 노출하며,
+ * 타이머 화면의 상태를 관리하는 ViewModel.
+ * 타이머 상태([timerState]), 키패드 입력([timerDigits]), 프리셋([savedPresets])을 UI에 노출하며,
  * 타이머 시작/취소 시 [TimerServiceController]를 통해 포그라운드 서비스를 제어한다.
  */
 @HiltViewModel
-class MainViewModel @Inject constructor(
+class TimerViewModel @Inject constructor(
     private val timerRepository: TimerRepository,
     private val startTimer: StartTimerUseCase,
     private val cancelTimer: CancelTimerUseCase,
-    private val checkPermissions: CheckPermissionsUseCase,
     private val timerServiceController: TimerServiceController,
     private val timerPresetRepository: TimerPresetRepository,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     /**
@@ -45,10 +45,9 @@ class MainViewModel @Inject constructor(
     val savedPresets: StateFlow<List<Long>> = timerPresetRepository.presets
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    private val _permissionState = MutableStateFlow(checkPermissions())
-
-    /** 현재 권한 허용 상태 스트림. [refreshPermissions] 호출 시 갱신된다. */
-    val permissionState: StateFlow<PermissionState> = _permissionState.asStateFlow()
+    /** 프리셋 시간 표시 형식 스트림. */
+    val timeFormat: StateFlow<TimeFormat> = settingsRepository.timeFormat
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimeFormat.KOREAN)
 
     private val _timerDigits = MutableStateFlow<List<Int>>(emptyList())
 
@@ -88,14 +87,6 @@ class MainViewModel @Inject constructor(
     fun onTimerDelete() {
         if (_timerDigits.value.isEmpty()) return
         _timerDigits.value = _timerDigits.value.dropLast(1)
-    }
-
-    /**
-     * 권한 상태를 현재 시점으로 다시 조회하여 갱신한다.
-     * 설정 화면에서 돌아올 때([Lifecycle.Event.ON_RESUME]) UI가 호출한다.
-     */
-    fun refreshPermissions() {
-        _permissionState.value = checkPermissions()
     }
 
     /**
