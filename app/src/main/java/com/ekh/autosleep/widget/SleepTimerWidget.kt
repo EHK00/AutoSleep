@@ -74,7 +74,7 @@ class SleepTimerWidget : GlanceAppWidget() {
                                 .padding(8.dp),
                         ) {
                             Text(
-                                text = "수면타이머",
+                                text = context.getString(com.ekh.autosleep.R.string.widget_title),
                                 maxLines = 1,
                                 style = TextStyle(
                                     color = GlanceTheme.colors.onSurface,
@@ -88,7 +88,7 @@ class SleepTimerWidget : GlanceAppWidget() {
                             val running = data.timerState as? TimerState.Running
                             if (running != null) {
                                 Text(
-                                    text = "${formatDuration(running.remainingMs, data.timeFormat)} 남음",
+                                    text = "${formatDuration(running.remainingMs, data.timeFormat, context)} ${context.getString(com.ekh.autosleep.R.string.widget_remaining_suffix)}",
                                     style = TextStyle(
                                         color = GlanceTheme.colors.primary,
                                         fontSize = 13.sp,
@@ -100,7 +100,7 @@ class SleepTimerWidget : GlanceAppWidget() {
 
                             if (data.presets.isEmpty()) {
                                 Text(
-                                    text = "저장된 프리셋이 없습니다",
+                                    text = context.getString(com.ekh.autosleep.R.string.widget_no_presets),
                                     style = TextStyle(
                                         color = GlanceTheme.colors.secondary,
                                         fontSize = 12.sp,
@@ -122,7 +122,7 @@ class SleepTimerWidget : GlanceAppWidget() {
                                                 ),
                                         ) {
                                             Text(
-                                                text = formatDuration(durationMs, data.timeFormat),
+                                                text = formatDuration(durationMs, data.timeFormat, context),
                                                 style = TextStyle(
                                                     color = GlanceTheme.colors.onSurface,
                                                     fontSize = 12.sp,
@@ -140,7 +140,7 @@ class SleepTimerWidget : GlanceAppWidget() {
     }
 }
 
-private fun formatDuration(durationMs: Long, format: TimeFormat): String {
+private fun formatDuration(durationMs: Long, format: TimeFormat, context: Context): String {
     val totalSec = durationMs / 1000
     val h = totalSec / 3600
     val m = (totalSec % 3600) / 60
@@ -148,10 +148,13 @@ private fun formatDuration(durationMs: Long, format: TimeFormat): String {
     return when (format) {
         TimeFormat.CLOCK -> "%02d:%02d:%02d".format(h, m, s)
         TimeFormat.KOREAN -> buildString {
-            if (h > 0) append("${h}시간")
-            if (m > 0) { if (isNotEmpty()) append(" "); append("${m}분") }
-            if (s > 0) { if (isNotEmpty()) append(" "); append("${s}초") }
-            if (isEmpty()) append("0초")
+            val hourStr = context.getString(com.ekh.autosleep.R.string.duration_hour)
+            val minStr = context.getString(com.ekh.autosleep.R.string.duration_minute)
+            val secStr = context.getString(com.ekh.autosleep.R.string.duration_second)
+            if (h > 0) append("${h}${hourStr}")
+            if (m > 0) { if (isNotEmpty()) append(" "); append("${m}${minStr}") }
+            if (s > 0) { if (isNotEmpty()) append(" "); append("${s}${secStr}") }
+            if (isEmpty()) append("0${secStr}")
         }
     }
 }

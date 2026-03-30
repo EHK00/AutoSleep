@@ -36,10 +36,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ekh.autosleep.R
 import com.ekh.autosleep.domain.entity.Routine
 
 @Composable
@@ -60,12 +62,12 @@ fun RoutineScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "루틴",
+                text = stringResource(R.string.routine_title),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
             )
             IconButton(onClick = onAddRoutine) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "루틴 추가")
+                Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.routine_add))
             }
         }
 
@@ -77,7 +79,7 @@ fun RoutineScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "루틴이 없습니다\n+ 버튼으로 추가해보세요",
+                    text = stringResource(R.string.routine_empty),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 24.sp,
                     modifier = Modifier.alpha(0.6f),
@@ -135,7 +137,7 @@ private fun RoutineItem(
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "삭제",
+                    contentDescription = stringResource(R.string.routine_delete),
                     tint = MaterialTheme.colorScheme.onErrorContainer,
                 )
             }
@@ -184,31 +186,39 @@ private fun RoutineItem(
 private fun DayChips(days: Set<Int>) {
     if (days.isEmpty()) {
         Text(
-            text = "1회",
+            text = stringResource(R.string.routine_once),
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         return
     }
 
-    val dayLabels = listOf(2 to "월", 3 to "화", 4 to "수", 5 to "목", 6 to "금", 7 to "토", 1 to "일")
+    val dayLabels = listOf(
+        2 to stringResource(R.string.day_mon),
+        3 to stringResource(R.string.day_tue),
+        4 to stringResource(R.string.day_wed),
+        5 to stringResource(R.string.day_thu),
+        6 to stringResource(R.string.day_fri),
+        7 to stringResource(R.string.day_sat),
+        1 to stringResource(R.string.day_sun),
+    )
     val isEveryDay = dayLabels.all { (day, _) -> day in days }
     val isWeekday = listOf(2, 3, 4, 5, 6).all { it in days } && 7 !in days && 1 !in days
     val isWeekend = listOf(7, 1).all { it in days } && listOf(2, 3, 4, 5, 6).none { it in days }
 
     when {
         isEveryDay -> Text(
-            text = "매일",
+            text = stringResource(R.string.routine_everyday),
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.primary,
         )
         isWeekday -> Text(
-            text = "주중",
+            text = stringResource(R.string.routine_weekday),
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.primary,
         )
         isWeekend -> Text(
-            text = "주말",
+            text = stringResource(R.string.routine_weekend),
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.primary,
         )

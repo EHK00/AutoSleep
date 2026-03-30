@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -70,7 +71,7 @@ fun AnalyticsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "분석",
+                text = stringResource(R.string.analytics_title),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -79,7 +80,7 @@ fun AnalyticsScreen(
                 IconButton(onClick = { showMenu = true }, modifier = Modifier.size(32.dp)) {
                     Icon(
                         painter = painterResource(R.drawable.ic_more_vert),
-                        contentDescription = "더 보기",
+                        contentDescription = stringResource(R.string.analytics_more),
                         tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                         modifier = Modifier.size(20.dp),
                     )
@@ -89,7 +90,7 @@ fun AnalyticsScreen(
                     onDismissRequest = { showMenu = false },
                 ) {
                     DropdownMenuItem(
-                        text = { Text("수면 시간 범위 설정", fontSize = 14.sp) },
+                        text = { Text(stringResource(R.string.analytics_set_sleep_range), fontSize = 14.sp) },
                         onClick = {
                             showMenu = false
                             showWindowDialog = true
@@ -131,6 +132,10 @@ private fun SleepWindowDialog(
     var startHour by remember { mutableIntStateOf(initialStartHour) }
     var endHour by remember { mutableIntStateOf(initialEndHour) }
 
+    val am = stringResource(R.string.am)
+    val pm = stringResource(R.string.pm)
+    val hourSuffix = stringResource(R.string.clock_hour_suffix)
+
     Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -140,22 +145,22 @@ private fun SleepWindowDialog(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "수면 시간 범위",
+                text = stringResource(R.string.analytics_sleep_range_title),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "이 범위 안에서 시작된 타이머만 수면 기록으로 집계됩니다.",
+                text = stringResource(R.string.analytics_sleep_range_desc),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             )
 
-            HourPickerRow(label = "시작", hour = startHour, onHourChange = { startHour = it })
-            HourPickerRow(label = "종료", hour = endHour, onHourChange = { endHour = it })
+            HourPickerRow(label = stringResource(R.string.analytics_range_start), hour = startHour, onHourChange = { startHour = it }, am = am, pm = pm, hourSuffix = hourSuffix)
+            HourPickerRow(label = stringResource(R.string.analytics_range_end), hour = endHour, onHourChange = { endHour = it }, am = am, pm = pm, hourSuffix = hourSuffix)
 
             Text(
-                text = buildWindowPreview(startHour, endHour),
+                text = buildWindowPreview(startHour, endHour, am, pm, hourSuffix),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -164,9 +169,9 @@ private fun SleepWindowDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
-                TextButton(onClick = onDismiss) { Text("취소") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
                 Spacer(Modifier.width(8.dp))
-                TextButton(onClick = { onConfirm(startHour, endHour) }) { Text("확인") }
+                TextButton(onClick = { onConfirm(startHour, endHour) }) { Text(stringResource(R.string.confirm)) }
             }
         }
     }
@@ -177,6 +182,9 @@ private fun HourPickerRow(
     label: String,
     hour: Int,
     onHourChange: (Int) -> Unit,
+    am: String,
+    pm: String,
+    hourSuffix: String,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -192,7 +200,7 @@ private fun HourPickerRow(
                 Text("‹", fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
             }
             Text(
-                text = formatHour(hour),
+                text = formatHour(hour, am, pm, hourSuffix),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -211,6 +219,11 @@ private fun HourPickerRow(
 
 @Composable
 private fun SummaryCard(state: AnalyticsUiState) {
+    val am = stringResource(R.string.am)
+    val pm = stringResource(R.string.pm)
+    val hourSuffix = stringResource(R.string.clock_hour_suffix)
+    val minuteSuffix = stringResource(R.string.clock_minute_suffix)
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -219,12 +232,12 @@ private fun SummaryCard(state: AnalyticsUiState) {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SummaryRow(
-                label = "최근 7일 평균 시작 시간",
-                value = state.recentAverageMinute?.let { formatMinute(it) } ?: "기록 없음",
+                label = stringResource(R.string.analytics_avg_start),
+                value = state.recentAverageMinute?.let { formatMinute(it, am, pm, hourSuffix, minuteSuffix) } ?: stringResource(R.string.analytics_no_records),
             )
             SummaryRow(
-                label = "누적 수면 타이머",
-                value = "${state.totalCount}회",
+                label = stringResource(R.string.analytics_total_timers),
+                value = stringResource(R.string.analytics_total_count, state.totalCount),
             )
         }
     }
@@ -255,7 +268,7 @@ private fun SummaryRow(label: String, value: String) {
 private fun WeeklyChartSection(state: AnalyticsUiState) {
     Column {
         Text(
-            text = "최근 7일 시작 시간",
+            text = stringResource(R.string.analytics_recent_chart_title),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
         )
@@ -270,7 +283,7 @@ private fun WeeklyChartSection(state: AnalyticsUiState) {
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "최근 기록이 없습니다",
+                    text = stringResource(R.string.analytics_no_recent_records),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 )
@@ -381,21 +394,22 @@ private fun WeeklyLineChart(
     }
 }
 
-private fun formatHour(hour: Int): String {
-    val amPm = if (hour < 12) "오전" else "오후"
+private fun formatHour(hour: Int, am: String, pm: String, hourSuffix: String): String {
+    val amPm = if (hour < 12) am else pm
     val displayH = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
-    return "$amPm ${displayH}시"
+    return if (hourSuffix.isEmpty()) "$displayH $amPm" else "$amPm $displayH$hourSuffix"
 }
 
-private fun buildWindowPreview(startHour: Int, endHour: Int): String =
-    "${formatHour(startHour)} ~ ${formatHour(endHour)}"
+private fun buildWindowPreview(startHour: Int, endHour: Int, am: String, pm: String, hourSuffix: String): String =
+    "${formatHour(startHour, am, pm, hourSuffix)} ~ ${formatHour(endHour, am, pm, hourSuffix)}"
 
-private fun formatMinute(totalMinutes: Int): String {
+private fun formatMinute(totalMinutes: Int, am: String, pm: String, hourSuffix: String, minuteSuffix: String): String {
     val h = (totalMinutes / 60) % 24
     val m = totalMinutes % 60
-    val amPm = if (h < 12) "오전" else "오후"
+    val amPm = if (h < 12) am else pm
     val displayH = if (h == 0) 12 else if (h > 12) h - 12 else h
-    return "$amPm ${displayH}시 ${"%02d".format(m)}분"
+    val mm = "%02d".format(m)
+    return if (hourSuffix.isEmpty()) "$displayH:$mm $amPm" else "$amPm $displayH$hourSuffix $mm$minuteSuffix"
 }
 
 private fun formatMinuteShort(normalizedMinute: Int): String {

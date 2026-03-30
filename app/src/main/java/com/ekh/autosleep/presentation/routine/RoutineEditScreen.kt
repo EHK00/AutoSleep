@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -45,6 +46,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ekh.autosleep.R
 import com.ekh.autosleep.presentation.timer.TimerInputPad
 import kotlinx.coroutines.launch
 
@@ -74,11 +76,11 @@ fun RoutineEditScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "뒤로",
+                    contentDescription = stringResource(R.string.back),
                 )
             }
             Text(
-                text = if (uiState.isNew) "루틴 추가" else "루틴 수정",
+                text = if (uiState.isNew) stringResource(R.string.routine_edit_add_title) else stringResource(R.string.routine_edit_edit_title),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 4.dp),
@@ -109,13 +111,21 @@ fun RoutineEditScreen(
 
         // 반복 요일 선택
         Text(
-            text = "반복",
+            text = stringResource(R.string.routine_edit_repeat),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        val dayList = listOf(2 to "월", 3 to "화", 4 to "수", 5 to "목", 6 to "금", 7 to "토", 1 to "일")
+        val dayList = listOf(
+            2 to stringResource(R.string.day_mon),
+            3 to stringResource(R.string.day_tue),
+            4 to stringResource(R.string.day_wed),
+            5 to stringResource(R.string.day_thu),
+            6 to stringResource(R.string.day_fri),
+            7 to stringResource(R.string.day_sat),
+            1 to stringResource(R.string.day_sun),
+        )
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth(),
@@ -150,7 +160,7 @@ fun RoutineEditScreen(
 
         // 이름 입력
         Text(
-            text = "이름 (선택)",
+            text = stringResource(R.string.routine_edit_name),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -172,7 +182,7 @@ fun RoutineEditScreen(
                     Box(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
                         if (uiState.label.isEmpty()) {
                             Text(
-                                text = "취침 루틴",
+                                text = stringResource(R.string.routine_edit_name_placeholder),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                 fontSize = 16.sp,
                             )
@@ -198,7 +208,7 @@ fun RoutineEditScreen(
                 onClick = onBack,
                 modifier = Modifier.weight(1f),
             ) {
-                Text("취소")
+                Text(stringResource(R.string.cancel))
             }
             Button(
                 onClick = {
@@ -210,7 +220,7 @@ fun RoutineEditScreen(
                 },
                 modifier = Modifier.weight(1f),
             ) {
-                Text("저장")
+                Text(stringResource(R.string.save))
             }
         }
     }

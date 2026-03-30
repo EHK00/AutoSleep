@@ -1,11 +1,14 @@
 package com.ekh.autosleep.presentation.analytics
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ekh.autosleep.R
 import com.ekh.autosleep.data.settings.SettingsRepository
 import com.ekh.autosleep.domain.entity.TimerLog
 import com.ekh.autosleep.domain.usecase.analytics.GetTimerLogsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -37,6 +40,7 @@ data class AnalyticsUiState(
 class AnalyticsViewModel @Inject constructor(
     getLogs: GetTimerLogsUseCase,
     private val settingsRepository: SettingsRepository,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     val uiState: StateFlow<AnalyticsUiState> = combine(
@@ -69,8 +73,17 @@ class AnalyticsViewModel @Inject constructor(
         val windowStart = lastLogDate.minusDays(6)
 
         // X축 레이블: windowStart ~ lastLogDate 7일의 요일
+        val dayLabels = listOf(
+            context.getString(R.string.day_mon),
+            context.getString(R.string.day_tue),
+            context.getString(R.string.day_wed),
+            context.getString(R.string.day_thu),
+            context.getString(R.string.day_fri),
+            context.getString(R.string.day_sat),
+            context.getString(R.string.day_sun),
+        )
         val xAxisLabels = (0..6).map { offset ->
-            DAY_LABELS[windowStart.plusDays(offset.toLong()).dayOfWeek.value - 1]
+            dayLabels[windowStart.plusDays(offset.toLong()).dayOfWeek.value - 1]
         }
 
         // 7일 윈도우 내 로그 필터 (수면 창 기반 경계 적용)
@@ -108,8 +121,6 @@ class AnalyticsViewModel @Inject constructor(
     }
 
     companion object {
-        private val DAY_LABELS = listOf("월", "화", "수", "목", "금", "토", "일")
-
         /**
          * 수면 창 기반 하루 경계로 날짜를 계산. 새벽 기록은 전날로 귀속.
          * 경계 시각 = endHour + (startHour까지 깨어있는 시간의 절반)

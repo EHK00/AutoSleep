@@ -52,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -214,7 +215,7 @@ fun MainScreen(
                     onClick = { timerViewModel.cancelTimer() },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("취소")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         } else {
@@ -270,12 +271,12 @@ private fun AppBottomNavBar(
     onTabSelected: (String) -> Unit,
 ) {
     val tabs = buildList {
-        add(NavTab(AppRoute.TIMER, R.drawable.ic_timer_bottom_nav, "타이머"))
+        add(NavTab(AppRoute.TIMER, R.drawable.ic_timer_bottom_nav, stringResource(R.string.nav_timer)))
         if (BuildConfig.ROUTINE_FEATURE_ENABLED) {
-            add(NavTab(AppRoute.ROUTINE, R.drawable.ic_routine_bottom_nav, "루틴"))
+            add(NavTab(AppRoute.ROUTINE, R.drawable.ic_routine_bottom_nav, stringResource(R.string.nav_routine)))
         }
-        add(NavTab(AppRoute.ANALYTICS, R.drawable.ic_analytics_bottom_nav, "분석"))
-        add(NavTab(AppRoute.SETTINGS, R.drawable.ic_settings_bottom_nav, "설정"))
+        add(NavTab(AppRoute.ANALYTICS, R.drawable.ic_analytics_bottom_nav, stringResource(R.string.nav_analytics)))
+        add(NavTab(AppRoute.SETTINGS, R.drawable.ic_settings_bottom_nav, stringResource(R.string.nav_settings)))
     }
 
     Column {

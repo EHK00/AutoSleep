@@ -1,0 +1,112 @@
+<resources>
+    <string name="app_name">AutoSleep</string>
+    <string name="accessibility_service_description">AutoSleep은 타이머 만료 시 화면을 잠그기 위해서만 접근성 서비스를 사용합니다. 입력 내용을 읽거나 다른 앱을 제어하지 않습니다.</string>
+
+    <!-- Common -->
+    <string name="cancel">취소</string>
+    <string name="save">저장</string>
+    <string name="confirm">확인</string>
+    <string name="close">닫기</string>
+    <string name="settings_button">설정</string>
+    <string name="back">뒤로</string>
+
+    <!-- Duration units (for preset labels: "1시간 30분") -->
+    <string name="duration_hour">시간</string>
+    <string name="duration_minute">분</string>
+    <string name="duration_second">초</string>
+
+    <!-- AM/PM and clock suffixes (for time display: "오전 11시", "오전 11시 30분") -->
+    <string name="am">오전</string>
+    <string name="pm">오후</string>
+    <string name="clock_hour_suffix">시</string>
+    <string name="clock_minute_suffix">분</string>
+
+    <!-- Day abbreviations -->
+    <string name="day_mon">월</string>
+    <string name="day_tue">화</string>
+    <string name="day_wed">수</string>
+    <string name="day_thu">목</string>
+    <string name="day_fri">금</string>
+    <string name="day_sat">토</string>
+    <string name="day_sun">일</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_timer">타이머</string>
+    <string name="nav_routine">루틴</string>
+    <string name="nav_analytics">분석</string>
+    <string name="nav_settings">설정</string>
+
+    <!-- Timer screen -->
+    <string name="timer_done">완료</string>
+    <string name="timer_tap_to_edit">탭하여 수정</string>
+    <string name="timer_start">시작</string>
+    <string name="timer_no_presets">저장된 프리셋이 없습니다</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">설정</string>
+    <string name="settings_preset_format">프리셋 표시 형식</string>
+    <string name="settings_preset_format_example_unit">1시간 30분 45초</string>
+    <string name="settings_preset_format_hms">시/분/초</string>
+    <string name="settings_version">버전</string>
+    <string name="settings_check_permissions">권한 확인</string>
+    <string name="settings_check_permissions_desc">앱 동작에 필요한 권한을 확인합니다.</string>
+
+    <!-- Permission setup screen -->
+    <string name="permission_title">권한 설정</string>
+    <string name="permission_subtitle">AutoSleep이 동작하려면 아래 권한이 필요합니다.</string>
+    <string name="permission_section_optional">선택 (미디어 제어 / 상태바)</string>
+    <string name="permission_notification_listener">알림 리스너</string>
+    <string name="permission_notification_listener_desc">YouTube, Twitch 등 재생 중인 미디어를 자동으로 일시정지합니다.</string>
+    <string name="permission_section_required">필수 (화면 끄기 / 알림)</string>
+    <string name="permission_accessibility">접근성 서비스</string>
+    <string name="permission_accessibility_desc">타이머 만료 시 화면을 잠급니다. 입력 감시나 기기 제어는 하지 않으며, 화면 잠금에만 사용됩니다.</string>
+    <string name="permission_notification">알림 권한</string>
+    <string name="permission_notification_desc">타이머 실행 중 백그라운드 알림을 표시합니다.</string>
+    <string name="permission_start">시작하기</string>
+    <string name="permission_required_message">필수 권한이 필요합니다</string>
+
+    <!-- Routine screen -->
+    <string name="routine_title">루틴</string>
+    <string name="routine_add">루틴 추가</string>
+    <string name="routine_empty">루틴이 없습니다\n+ 버튼으로 추가해보세요</string>
+    <string name="routine_delete">삭제</string>
+    <string name="routine_once">1회</string>
+    <string name="routine_everyday">매일</string>
+    <string name="routine_weekday">주중</string>
+    <string name="routine_weekend">주말</string>
+
+    <!-- Routine edit screen -->
+    <string name="routine_edit_add_title">루틴 추가</string>
+    <string name="routine_edit_edit_title">루틴 수정</string>
+    <string name="routine_edit_repeat">반복</string>
+    <string name="routine_edit_name">이름 (선택)</string>
+    <string name="routine_edit_name_placeholder">취침 루틴</string>
+
+    <!-- Analytics screen -->
+    <string name="analytics_title">분석</string>
+    <string name="analytics_more">더 보기</string>
+    <string name="analytics_set_sleep_range">수면 시간 범위 설정</string>
+    <string name="analytics_sleep_range_title">수면 시간 범위</string>
+    <string name="analytics_sleep_range_desc">이 범위 안에서 시작된 타이머만 수면 기록으로 집계됩니다.</string>
+    <string name="analytics_range_start">시작</string>
+    <string name="analytics_range_end">종료</string>
+    <string name="analytics_avg_start">최근 7일 평균 시작 시간</string>
+    <string name="analytics_no_records">기록 없음</string>
+    <string name="analytics_total_timers">누적 수면 타이머</string>
+    <string name="analytics_total_count">%d회</string>
+    <string name="analytics_recent_chart_title">최근 7일 시작 시간</string>
+    <string name="analytics_no_recent_records">최근 기록이 없습니다</string>
+
+    <!-- Notification / Service -->
+    <string name="notif_channel_name">자동 수면 타이머</string>
+    <string name="notif_waiting">타이머 대기 중</string>
+    <string name="notif_countdown">수면까지 카운트다운 중</string>
+    <string name="notif_transitioning">수면 전환 중…</string>
+    <string name="notif_remaining_time">남은 시간: %s</string>
+    <string name="notif_action_extend">+10분</string>
+
+    <!-- Widget -->
+    <string name="widget_title">수면타이머</string>
+    <string name="widget_remaining_suffix">남음</string>
+    <string name="widget_no_presets">저장된 프리셋이 없습니다</string>
+</resources>

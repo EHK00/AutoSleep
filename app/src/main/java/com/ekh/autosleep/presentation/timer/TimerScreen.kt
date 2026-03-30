@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ekh.autosleep.R
 import com.ekh.autosleep.data.settings.TimeFormat
 import com.ekh.autosleep.ui.theme.AutoSleepTheme
 
@@ -81,7 +83,7 @@ fun TimerScreen(
                 TimerInputDisplay(digits = timerDigits)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = if (isTimerFocused) "완료" else "탭하여 수정",
+                    text = if (isTimerFocused) stringResource(R.string.timer_done) else stringResource(R.string.timer_tap_to_edit),
                     fontSize = 12.sp,
                     color = Color.Gray,
                 )
@@ -133,14 +135,14 @@ fun TimerScreen(
                     enabled = durationMs > 0,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("저장", fontSize = 18.sp)
+                    Text(stringResource(R.string.save), fontSize = 18.sp)
                 }
                 Button(
                     onClick = { viewModel.startTimer(durationMs) },
                     enabled = durationMs > 0,
                     modifier = Modifier.weight(2f),
                 ) {
-                    Text("시작", fontSize = 18.sp)
+                    Text(stringResource(R.string.timer_start), fontSize = 18.sp)
                 }
             }
 
@@ -162,6 +164,10 @@ private fun PresetList(
     onDelete: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val hourStr = stringResource(R.string.duration_hour)
+    val minStr = stringResource(R.string.duration_minute)
+    val secStr = stringResource(R.string.duration_second)
+
     LazyColumn(modifier = modifier) {
         if (presets.isEmpty()) {
             item {
@@ -171,7 +177,7 @@ private fun PresetList(
                         .padding(vertical = 32.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("저장된 프리셋이 없습니다", color = Color.Gray, fontSize = 14.sp)
+                    Text(stringResource(R.string.timer_no_presets), color = Color.Gray, fontSize = 14.sp)
                 }
             }
         } else {
@@ -185,7 +191,7 @@ private fun PresetList(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = formatPresetLabel(durationMs, timeFormat),
+                        text = formatPresetLabel(durationMs, timeFormat, hourStr, minStr, secStr),
                         fontSize = 18.sp,
                         modifier = Modifier.weight(1f),
                     )
@@ -265,7 +271,7 @@ internal fun TimerInputPad(
 }
 
 /** 밀리초를 설정된 형식의 문자열로 변환한다. */
-private fun formatPresetLabel(durationMs: Long, format: TimeFormat): String {
+private fun formatPresetLabel(durationMs: Long, format: TimeFormat, hourStr: String, minStr: String, secStr: String): String {
     val totalSec = durationMs / 1000
     val h = totalSec / 3600
     val m = (totalSec % 3600) / 60
@@ -273,14 +279,14 @@ private fun formatPresetLabel(durationMs: Long, format: TimeFormat): String {
     return when (format) {
         TimeFormat.CLOCK -> "%02d:%02d:%02d".format(h, m, s)
         TimeFormat.KOREAN -> buildString {
-            if (h > 0) append("${h}시간")
+            if (h > 0) append("${h}${hourStr}")
             if (m > 0) {
-                if (isNotEmpty()) append(" "); append("${m}분")
+                if (isNotEmpty()) append(" "); append("${m}${minStr}")
             }
             if (s > 0) {
-                if (isNotEmpty()) append(" "); append("${s}초")
+                if (isNotEmpty()) append(" "); append("${s}${secStr}")
             }
-            if (isEmpty()) append("0초")
+            if (isEmpty()) append("0${secStr}")
         }
     }
 }
