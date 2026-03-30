@@ -5,10 +5,13 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
+import com.ekh.autosleep.data.analytics.TimerLogRepositoryImpl
+import com.ekh.autosleep.data.analytics.db.TimerLogDao
 import com.ekh.autosleep.data.media.MediaControlRepositoryImpl
 import com.ekh.autosleep.data.permission.PermissionRepositoryImpl
 import com.ekh.autosleep.data.preset.TimerPresetRepositoryImpl
 import com.ekh.autosleep.data.routine.RoutineRepositoryImpl
+import com.ekh.autosleep.data.routine.db.MIGRATION_1_2
 import com.ekh.autosleep.data.routine.db.RoutineDao
 import com.ekh.autosleep.data.routine.db.RoutineDatabase
 import com.ekh.autosleep.data.screen.ScreenControlRepositoryImpl
@@ -19,8 +22,11 @@ import com.ekh.autosleep.domain.repository.MediaControlRepository
 import com.ekh.autosleep.domain.repository.PermissionRepository
 import com.ekh.autosleep.domain.repository.RoutineRepository
 import com.ekh.autosleep.domain.repository.ScreenControlRepository
+import com.ekh.autosleep.domain.repository.TimerLogRepository
 import com.ekh.autosleep.domain.repository.TimerPresetRepository
 import com.ekh.autosleep.domain.repository.TimerRepository
+import com.ekh.autosleep.domain.usecase.analytics.GetTimerLogsUseCase
+import com.ekh.autosleep.domain.usecase.analytics.RecordTimerLogUseCase
 import com.ekh.autosleep.domain.usecase.media.PauseAllMediaUseCase
 import com.ekh.autosleep.domain.usecase.media.RequestAudioFocusUseCase
 import com.ekh.autosleep.domain.usecase.permission.CheckPermissionsUseCase
@@ -74,6 +80,9 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindRoutineRepository(impl: RoutineRepositoryImpl): RoutineRepository
+
+    @Binds @Singleton
+    abstract fun bindTimerLogRepository(impl: TimerLogRepositoryImpl): TimerLogRepository
 }
 
 @Module
@@ -111,10 +120,21 @@ object UseCaseModule {
 
     @Provides @Singleton
     fun provideRoutineDatabase(@ApplicationContext context: Context): RoutineDatabase =
-        Room.databaseBuilder(context, RoutineDatabase::class.java, "routine_db").build()
+        Room.databaseBuilder(context, RoutineDatabase::class.java, "routine_db")
+            .addMigrations(MIGRATION_1_2)
+            .build()
 
     @Provides @Singleton
     fun provideRoutineDao(db: RoutineDatabase): RoutineDao = db.routineDao()
+
+    @Provides @Singleton
+    fun provideTimerLogDao(db: RoutineDatabase): TimerLogDao = db.timerLogDao()
+
+    @Provides @Singleton
+    fun provideGetTimerLogsUseCase(repo: TimerLogRepository) = GetTimerLogsUseCase(repo)
+
+    @Provides @Singleton
+    fun provideRecordTimerLogUseCase(repo: TimerLogRepository) = RecordTimerLogUseCase(repo)
 
     @Provides @Singleton
     fun provideGetRoutinesUseCase(repo: RoutineRepository) = GetRoutinesUseCase(repo)

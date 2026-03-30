@@ -64,6 +64,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.ekh.autosleep.domain.entity.TimerState
+import com.ekh.autosleep.presentation.analytics.AnalyticsScreen
 import com.ekh.autosleep.presentation.permission.PermissionSetupScreen
 import com.ekh.autosleep.presentation.permission.PermissionViewModel
 import com.ekh.autosleep.presentation.routine.RoutineEditScreen
@@ -81,6 +82,7 @@ private object AppRoute {
     const val TIMER = "timer"
     const val ROUTINE = "routine"
     const val ROUTINE_EDIT = "routine_edit"
+    const val ANALYTICS = "analytics"
     const val SETTINGS = "settings"
     const val PERMISSIONS = "permissions"
 }
@@ -238,6 +240,9 @@ fun MainScreen(
                         RoutineEditScreen(onBack = { navController.popBackStack() })
                     }
                 }
+                composable(AppRoute.ANALYTICS) {
+                    AnalyticsScreen()
+                }
                 composable(AppRoute.SETTINGS) {
                     SettingsScreen(
                         onCheckPermissions = {
@@ -269,6 +274,7 @@ private fun AppBottomNavBar(
         if (BuildConfig.ROUTINE_FEATURE_ENABLED) {
             add(NavTab(AppRoute.ROUTINE, R.drawable.ic_routine_bottom_nav, "루틴"))
         }
+        add(NavTab(AppRoute.ANALYTICS, R.drawable.ic_analytics_bottom_nav, "분석"))
         add(NavTab(AppRoute.SETTINGS, R.drawable.ic_settings_bottom_nav, "설정"))
     }
 

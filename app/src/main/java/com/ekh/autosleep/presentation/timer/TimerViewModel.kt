@@ -8,6 +8,7 @@ import com.ekh.autosleep.domain.entity.TimerConfig
 import com.ekh.autosleep.domain.entity.TimerState
 import com.ekh.autosleep.domain.repository.TimerPresetRepository
 import com.ekh.autosleep.domain.repository.TimerRepository
+import com.ekh.autosleep.domain.usecase.analytics.RecordTimerLogUseCase
 import com.ekh.autosleep.domain.usecase.timer.CancelTimerUseCase
 import com.ekh.autosleep.domain.usecase.timer.StartTimerUseCase
 import com.ekh.autosleep.service.TimerServiceController
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -32,6 +34,7 @@ class TimerViewModel @Inject constructor(
     private val timerServiceController: TimerServiceController,
     private val timerPresetRepository: TimerPresetRepository,
     private val settingsRepository: SettingsRepository,
+    private val recordTimerLog: RecordTimerLogUseCase,
 ) : ViewModel() {
 
     /**
@@ -94,9 +97,11 @@ class TimerViewModel @Inject constructor(
      * @param durationMs 카운트다운할 시간 (밀리초).
      */
     fun startTimer(durationMs: Long) {
+        val startedAt = System.currentTimeMillis()
         _timerDigits.value = emptyList()
         startTimer.invoke(TimerConfig(durationMs))
         timerServiceController.start(durationMs)
+        viewModelScope.launch { recordTimerLog(startedAt, durationMs) }
     }
 
     /**

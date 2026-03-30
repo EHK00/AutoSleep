@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,7 +43,30 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
+    override val sleepWindowStartHour: StateFlow<Int> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { prefs -> prefs[KEY_SLEEP_WINDOW_START] ?: DEFAULT_SLEEP_WINDOW_START }
+        .stateIn(scope, SharingStarted.Eagerly, DEFAULT_SLEEP_WINDOW_START)
+
+    override val sleepWindowEndHour: StateFlow<Int> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { prefs -> prefs[KEY_SLEEP_WINDOW_END] ?: DEFAULT_SLEEP_WINDOW_END }
+        .stateIn(scope, SharingStarted.Eagerly, DEFAULT_SLEEP_WINDOW_END)
+
+    override fun setSleepWindow(startHour: Int, endHour: Int) {
+        scope.launch {
+            dataStore.edit { prefs ->
+                prefs[KEY_SLEEP_WINDOW_START] = startHour
+                prefs[KEY_SLEEP_WINDOW_END] = endHour
+            }
+        }
+    }
+
     companion object {
         private val KEY_TIME_FORMAT = stringPreferencesKey("time_format")
+        private val KEY_SLEEP_WINDOW_START = intPreferencesKey("sleep_window_start")
+        private val KEY_SLEEP_WINDOW_END = intPreferencesKey("sleep_window_end")
+        private const val DEFAULT_SLEEP_WINDOW_START = 21
+        private const val DEFAULT_SLEEP_WINDOW_END = 6
     }
 }
