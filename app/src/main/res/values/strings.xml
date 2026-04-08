@@ -1,4 +1,94 @@
 <resources>
     <string name="app_name">AutoSleep</string>
-    <string name="accessibility_service_description">AutoSleep이 타이머 만료 시 화면을 잠그기 위해 접근성 서비스를 사용합니다.</string>
+    <string name="accessibility_service_description">AutoSleep uses the Accessibility Service solely to lock the screen when the timer expires. It does not read your input, screen content, or control your device in any other way.</string>
+
+    <!-- Common -->
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="confirm">OK</string>
+    <string name="close">Close</string>
+    <string name="settings_button">Settings</string>
+    <string name="back">Back</string>
+
+    <!-- Duration units (for preset labels: "1h 30m") -->
+    <string name="duration_hour">h</string>
+    <string name="duration_minute">m</string>
+    <string name="duration_second">s</string>
+
+    <!-- AM/PM and clock suffixes (for time display: "11 AM", "11:30 AM") -->
+    <string name="am">AM</string>
+    <string name="pm">PM</string>
+    <string name="clock_hour_suffix"></string>
+    <string name="clock_minute_suffix"></string>
+
+    <!-- Day abbreviations -->
+    <string name="day_mon">Mo</string>
+    <string name="day_tue">Tu</string>
+    <string name="day_wed">We</string>
+    <string name="day_thu">Th</string>
+    <string name="day_fri">Fr</string>
+    <string name="day_sat">Sa</string>
+    <string name="day_sun">Su</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_timer">Timer</string>
+    <string name="nav_analytics">Analytics</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Timer screen -->
+    <string name="timer_done">Done</string>
+    <string name="timer_tap_to_edit">Tap to edit</string>
+    <string name="timer_start">Start</string>
+    <string name="timer_no_presets">No saved presets</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_preset_format">Preset display format</string>
+    <string name="settings_preset_format_example_unit">1h 30m 45s</string>
+    <string name="settings_preset_format_hms">h/m/s</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_check_permissions">Check Permissions</string>
+    <string name="settings_check_permissions_desc">Check permissions required for app operation.</string>
+
+    <!-- Permission setup screen -->
+    <string name="permission_title">Permission Setup</string>
+    <string name="permission_subtitle">AutoSleep requires the following permissions to work.</string>
+    <string name="permission_section_optional">Optional (Media control / Status bar)</string>
+    <string name="permission_notification_listener">Notification Listener</string>
+    <string name="permission_notification_listener_desc">Automatically pauses media playing on YouTube, Twitch, etc.</string>
+    <string name="permission_section_required">Required (Screen off / Notification)</string>
+    <string name="permission_accessibility">Accessibility Service</string>
+    <string name="permission_accessibility_desc">Locks the screen when the timer expires. It does not monitor input or control your device in any other way.</string>
+    <string name="permission_notification">Notification Permission</string>
+    <string name="permission_notification_desc">Shows background notifications while the timer is running.</string>
+    <string name="permission_start">Get Started</string>
+    <string name="permission_required_message">Required permissions needed</string>
+
+    <!-- Analytics screen -->
+    <string name="analytics_title">Analytics</string>
+    <string name="analytics_more">More options</string>
+    <string name="analytics_set_sleep_range">Set sleep time range</string>
+    <string name="analytics_sleep_range_title">Sleep Time Range</string>
+    <string name="analytics_sleep_range_desc">Only timers started within this range are counted as sleep records.</string>
+    <string name="analytics_range_start">Start</string>
+    <string name="analytics_range_end">End</string>
+    <string name="analytics_avg_start">7-day avg. start time</string>
+    <string name="analytics_no_records">No records</string>
+    <string name="analytics_total_timers">Total sleep timers</string>
+    <string name="analytics_total_count">%d times</string>
+    <string name="analytics_recent_chart_title">Start time (last 7 days)</string>
+    <string name="analytics_no_recent_records">No recent records</string>
+
+    <!-- Notification / Service -->
+    <string name="notif_channel_name">Auto Sleep Timer</string>
+    <string name="notif_waiting">Timer waiting</string>
+    <string name="notif_countdown">Counting down to sleep</string>
+    <string name="notif_transitioning">Transitioning to sleep…</string>
+    <string name="notif_remaining_time">Time remaining: %s</string>
+    <string name="notif_action_extend">+10 min</string>
+
+    <!-- Widget -->
+    <string name="widget_title">Sleep Timer</string>
+    <string name="widget_remaining_suffix">left</string>
+    <string name="widget_no_presets">No saved presets</string>
 </resources>

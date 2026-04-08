@@ -60,7 +60,7 @@ class TimerService : Service() {
         super.onCreate()
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, buildNotification("타이머 대기 중"))
+        startForeground(NOTIFICATION_ID, buildNotification(getString(R.string.notif_waiting)))
         if (appState.isInForeground.value) {
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         }
@@ -102,7 +102,7 @@ class TimerService : Service() {
                     is TimerState.Running -> {
                         val expiryTimeMs = System.currentTimeMillis() + state.remainingMs
                         val notification = buildNotification(
-                            text = "수면까지 카운트다운 중",
+                            text = getString(R.string.notif_countdown),
                             expiryTimeMs = expiryTimeMs,
                             remainingMs = state.remainingMs,
                         )
@@ -114,7 +114,7 @@ class TimerService : Service() {
                         }
                     }
                     is TimerState.Expired -> {
-                        startForeground(NOTIFICATION_ID, buildNotification("수면 전환 중..."))
+                        startForeground(NOTIFICATION_ID, buildNotification(getString(R.string.notif_transitioning)))
                         executeSleepSequence()
                         stopSelf()
                     }
@@ -137,7 +137,7 @@ class TimerService : Service() {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             /* id = */ CHANNEL_ID,
-            /* name = */ "자동 수면 타이머",
+            /* name = */ getString(R.string.notif_channel_name),
             /* importance = */ NotificationManager.IMPORTANCE_DEFAULT,
         )
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -187,13 +187,13 @@ class TimerService : Service() {
 //        }
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("남은 시간: $metric")
+            .setContentTitle(getString(R.string.notif_remaining_time, metric))
             .setSmallIcon(R.drawable.ic_stat_name)
             .setContentIntent(contentIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .addAction(NotificationCompat.Action(0, "+10분", extendIntent))
-            .addAction(NotificationCompat.Action(0, "취소", cancelIntent))
+            .addAction(NotificationCompat.Action(0, getString(R.string.notif_action_extend), extendIntent))
+            .addAction(NotificationCompat.Action(0, getString(R.string.cancel), cancelIntent))
             .build()
     }
 
@@ -205,7 +205,7 @@ class TimerService : Service() {
         return when {
             h > 0 -> "%d:%02d:%02d".format(h, m, s)
             m > 0 -> "%02d:%02d".format(m, s)
-            else -> "${s}초"
+            else -> "${s}${getString(R.string.duration_second)}"
         }
     }
 

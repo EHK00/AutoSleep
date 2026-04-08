@@ -23,10 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ekh.autosleep.R
 import com.ekh.autosleep.data.settings.TimeFormat
 import com.ekh.autosleep.ui.theme.AutoSleepTheme
 
@@ -53,7 +55,7 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            text = "설정",
+            text = stringResource(R.string.settings_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
@@ -68,9 +70,9 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("프리셋 표시 형식", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.settings_preset_format), style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    text = if (timeFormat == TimeFormat.KOREAN) "1시간 30분 45초" else "01:30:45",
+                    text = if (timeFormat == TimeFormat.KOREAN) stringResource(R.string.settings_preset_format_example_unit) else "01:30:45",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -80,7 +82,7 @@ fun SettingsScreen(
                     selected = timeFormat == TimeFormat.KOREAN,
                     onClick = { viewModel.setTimeFormat(TimeFormat.KOREAN) },
                     shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                    label = { Text("시/분/초") },
+                    label = { Text(stringResource(R.string.settings_preset_format_hms)) },
                 )
                 SegmentedButton(
                     selected = timeFormat == TimeFormat.CLOCK,
@@ -100,7 +102,7 @@ fun SettingsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("버전", style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.settings_version), style = MaterialTheme.typography.bodyLarge)
             Text("v$versionName", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
@@ -114,9 +116,9 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("권한 확인", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.settings_check_permissions), style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    text = "앱 동작에 필요한 권한을 확인합니다.",
+                    text = stringResource(R.string.settings_check_permissions_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -125,7 +127,7 @@ fun SettingsScreen(
                 onClick = onCheckPermissions,
                 modifier = Modifier.padding(start = 8.dp),
             ) {
-                Text("확인")
+                Text(stringResource(R.string.confirm))
             }
         }
     }

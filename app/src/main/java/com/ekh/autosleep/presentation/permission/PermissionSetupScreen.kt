@@ -22,6 +22,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -29,6 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.ekh.autosleep.R
 import com.ekh.autosleep.domain.entity.PermissionState
 import com.ekh.autosleep.ui.theme.AutoSleepTheme
 
@@ -72,12 +74,12 @@ fun PermissionSetupScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            text = "권한 설정",
+            text = stringResource(R.string.permission_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
         )
         Text(
-            text = "AutoSleep이 동작하려면 아래 권한이 필요합니다.",
+            text = stringResource(R.string.permission_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -85,11 +87,11 @@ fun PermissionSetupScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // 선택 권한 섹션
-        SectionLabel("선택 (미디어 제어 / 상태바)")
+        SectionLabel(stringResource(R.string.permission_section_optional))
 
         PermissionItem(
-            title = "알림 리스너",
-            description = "YouTube, Twitch 등 재생 중인 미디어를 자동으로 일시정지합니다.",
+            title = stringResource(R.string.permission_notification_listener),
+            description = stringResource(R.string.permission_notification_listener_desc),
             granted = permissionState.notificationListenerGranted,
             onSetup = {
                 context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -100,11 +102,11 @@ fun PermissionSetupScreen(
 
 
         // 필수 권한 섹션
-        SectionLabel("필수 (화면 끄기 / 알림)")
+        SectionLabel(stringResource(R.string.permission_section_required))
 
         PermissionItem(
-            title = "접근성 서비스",
-            description = "타이머 만료 시 화면을 잠급니다.",
+            title = stringResource(R.string.permission_accessibility),
+            description = stringResource(R.string.permission_accessibility_desc),
             granted = permissionState.accessibilityGranted,
             onSetup = {
                 context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -113,8 +115,8 @@ fun PermissionSetupScreen(
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             PermissionItem(
-                title = "알림 권한",
-                description = "타이머 실행 중 백그라운드 알림을 표시합니다.",
+                title = stringResource(R.string.permission_notification),
+                description = stringResource(R.string.permission_notification_desc),
                 granted = permissionState.postNotificationsGranted,
                 onSetup = onRequestPostNotifications,
             )
@@ -127,7 +129,7 @@ fun PermissionSetupScreen(
                 onClick = onClose,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("닫기")
+                Text(stringResource(R.string.close))
             }
         } else {
             Button(
@@ -135,7 +137,7 @@ fun PermissionSetupScreen(
                 enabled = permissionState.canShowTimer,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (permissionState.canShowTimer) "시작하기" else "필수 권한이 필요합니다")
+                Text(if (permissionState.canShowTimer) stringResource(R.string.permission_start) else stringResource(R.string.permission_required_message))
             }
         }
     }
@@ -197,7 +199,7 @@ private fun PermissionItem(
                 onClick = onSetup,
                 modifier = Modifier.padding(start = 8.dp),
             ) {
-                Text("설정")
+                Text(stringResource(R.string.settings_button))
             }
         }
     }
