@@ -24,12 +24,10 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("boolean", "ROUTINE_FEATURE_ENABLED", "false")
         }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            buildConfigField("boolean", "ROUTINE_FEATURE_ENABLED", "false")
         }
     }
     compileOptions {
@@ -41,7 +39,6 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig = true
     }
 }
 

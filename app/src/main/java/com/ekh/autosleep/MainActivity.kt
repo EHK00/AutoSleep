@@ -58,18 +58,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.ekh.autosleep.domain.entity.TimerState
 import com.ekh.autosleep.presentation.analytics.AnalyticsScreen
 import com.ekh.autosleep.presentation.permission.PermissionSetupScreen
 import com.ekh.autosleep.presentation.permission.PermissionViewModel
-import com.ekh.autosleep.presentation.routine.RoutineEditScreen
-import com.ekh.autosleep.presentation.routine.RoutineScreen
 import com.ekh.autosleep.presentation.settings.SettingsScreen
 import com.ekh.autosleep.presentation.timer.TimerScreen
 import com.ekh.autosleep.presentation.timer.TimerViewModel
@@ -81,8 +77,6 @@ private data class NavTab(val route: String, @DrawableRes val iconRes: Int, val 
 
 private object AppRoute {
     const val TIMER = "timer"
-    const val ROUTINE = "routine"
-    const val ROUTINE_EDIT = "routine_edit"
     const val ANALYTICS = "analytics"
     const val SETTINGS = "settings"
     const val PERMISSIONS = "permissions"
@@ -160,7 +154,6 @@ fun MainScreen(
     val isTimerRunning = timerState is TimerState.Running
     val showBottomBar = !isFirstRunPermission && !isTimerRunning
         && currentRoute != AppRoute.PERMISSIONS
-        && currentRoute != AppRoute.ROUTINE_EDIT
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -227,20 +220,6 @@ fun MainScreen(
                 composable(AppRoute.TIMER) {
                     TimerScreen(viewModel = timerViewModel)
                 }
-                if (BuildConfig.ROUTINE_FEATURE_ENABLED) {
-                    composable(AppRoute.ROUTINE) {
-                        RoutineScreen(
-                            onAddRoutine = { navController.navigate("${AppRoute.ROUTINE_EDIT}/-1") },
-                            onEditRoutine = { id: Long -> navController.navigate("${AppRoute.ROUTINE_EDIT}/$id") },
-                        )
-                    }
-                    composable(
-                        route = "${AppRoute.ROUTINE_EDIT}/{routineId}",
-                        arguments = listOf(navArgument("routineId") { type = NavType.LongType }),
-                    ) {
-                        RoutineEditScreen(onBack = { navController.popBackStack() })
-                    }
-                }
                 composable(AppRoute.ANALYTICS) {
                     AnalyticsScreen()
                 }
@@ -270,14 +249,11 @@ private fun AppBottomNavBar(
     currentRoute: String?,
     onTabSelected: (String) -> Unit,
 ) {
-    val tabs = buildList {
-        add(NavTab(AppRoute.TIMER, R.drawable.ic_timer_bottom_nav, stringResource(R.string.nav_timer)))
-        if (BuildConfig.ROUTINE_FEATURE_ENABLED) {
-            add(NavTab(AppRoute.ROUTINE, R.drawable.ic_routine_bottom_nav, stringResource(R.string.nav_routine)))
-        }
-        add(NavTab(AppRoute.ANALYTICS, R.drawable.ic_analytics_bottom_nav, stringResource(R.string.nav_analytics)))
-        add(NavTab(AppRoute.SETTINGS, R.drawable.ic_settings_bottom_nav, stringResource(R.string.nav_settings)))
-    }
+    val tabs = listOf(
+        NavTab(AppRoute.TIMER, R.drawable.ic_timer_bottom_nav, stringResource(R.string.nav_timer)),
+        NavTab(AppRoute.ANALYTICS, R.drawable.ic_analytics_bottom_nav, stringResource(R.string.nav_analytics)),
+        NavTab(AppRoute.SETTINGS, R.drawable.ic_settings_bottom_nav, stringResource(R.string.nav_settings)),
+    )
 
     Column {
         HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))

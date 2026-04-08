@@ -32,7 +32,6 @@
 
     <!-- Bottom navigation -->
     <string name="nav_timer">Timer</string>
-    <string name="nav_routine">Routine</string>
     <string name="nav_analytics">Analytics</string>
     <string name="nav_settings">Settings</string>
 
@@ -64,23 +63,6 @@
     <string name="permission_notification_desc">Shows background notifications while the timer is running.</string>
     <string name="permission_start">Get Started</string>
     <string name="permission_required_message">Required permissions needed</string>
-
-    <!-- Routine screen -->
-    <string name="routine_title">Routine</string>
-    <string name="routine_add">Add routine</string>
-    <string name="routine_empty">No routines\nTap + to add one</string>
-    <string name="routine_delete">Delete</string>
-    <string name="routine_once">Once</string>
-    <string name="routine_everyday">Every day</string>
-    <string name="routine_weekday">Weekdays</string>
-    <string name="routine_weekend">Weekends</string>
-
-    <!-- Routine edit screen -->
-    <string name="routine_edit_add_title">Add Routine</string>
-    <string name="routine_edit_edit_title">Edit Routine</string>
-    <string name="routine_edit_repeat">Repeat</string>
-    <string name="routine_edit_name">Name (optional)</string>
-    <string name="routine_edit_name_placeholder">Bedtime routine</string>
 
     <!-- Analytics screen -->
     <string name="analytics_title">Analytics</string>
