@@ -31,6 +31,7 @@ autoSleep/
 ## AGENTS.md — 공통 규칙
 
 ### 브랜치 네이밍
+- 베이스 브랜치: `git branch -r`에서 `release/` 접두사 브랜치 중 가장 최신 버전 (e.g. `release/v1.0.2`)
 - planner: `feature/planning-YYYYMMDD`
 - developer: `feature/<task-slug>` (TODO 태스크명을 kebab-case로 변환)
 
@@ -74,7 +75,7 @@ autoSleep/
 ## /planner 커맨드 동작
 
 ### 입력 없을 때 (`/planner`)
-1. `main`에서 `feature/planning-YYYYMMDD` 브랜치 생성
+1. 최신 `release/*` 브랜치에서 `feature/planning-YYYYMMDD` 브랜치 생성
 2. 코드베이스 전체 스캔
    - 현재 구현된 기능 목록 파악 (screens, services, data sources)
    - 코드 내 `TODO` 주석 수집
@@ -93,7 +94,7 @@ autoSleep/
 ## /developer 커맨드 동작
 
 1. `docs/TODO.md` **대기 중** 테이블에서 최우선순위 태스크 선택 (P0 → P1 → P2 → P3 순)
-2. `main`에서 `feature/<task-slug>` 브랜치 생성
+2. 최신 `release/*` 브랜치에서 `feature/<task-slug>` 브랜치 생성
 3. 선택한 태스크를 **진행 중** 섹션으로 이동 후 커밋 (브랜치 위에서)
 4. 태스크 구현
 5. `./gradlew assembleDebug` 실행
@@ -108,6 +109,7 @@ autoSleep/
 
 ```
 /planner
+  └─> 최신 release/* 브랜치 확인 (git branch -r)
   └─> git checkout -b feature/planning-YYYYMMDD
   └─> 코드베이스 분석
   └─> docs/TODO.md 업데이트
@@ -116,7 +118,8 @@ autoSleep/
 
 /developer
   └─> docs/TODO.md에서 최우선 태스크 선택
-  └─> git checkout -b feature/<task-slug> (from main)
+  └─> 최신 release/* 브랜치 확인 (git branch -r)
+  └─> git checkout -b feature/<task-slug> (from latest release/*)
   └─> TODO.md 진행 중으로 이동 커밋
   └─> 구현
   └─> ./gradlew assembleDebug
