@@ -21,7 +21,13 @@ $ARGUMENTS
 
 ### 2. 플래닝 브랜치 생성
 
-    git checkout -b feature/planning-$(date +%Y%m%d) <BASE_BRANCH>
+    PLAN_DATE=$(date +%Y%m%d)
+    PLAN_BRANCH="feature/planning-${PLAN_DATE}"
+    WORKTREE_PATH=".worktrees/planning-${PLAN_DATE}"
+    git worktree add "${WORKTREE_PATH}" -b "${PLAN_BRANCH}" <BASE_BRANCH>
+    cd "${WORKTREE_PATH}"
+
+이후 모든 작업은 이 worktree 디렉토리 안에서 수행합니다.
 
 ### 3. 코드베이스 분석
 다음을 읽고 현재 앱 상태를 파악합니다:
@@ -54,3 +60,11 @@ $ARGUMENTS
 
 ## 참고
 [docs/TODO.md](docs/TODO.md)"
+
+### 7. Worktree 정리
+
+PR 생성 후 자동으로 worktree를 정리합니다:
+
+    cd ../..
+    git worktree remove "${WORKTREE_PATH}"
+    git branch -d "${PLAN_BRANCH}"
