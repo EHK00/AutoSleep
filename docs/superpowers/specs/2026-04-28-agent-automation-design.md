@@ -93,8 +93,8 @@ autoSleep/
 ## /developer 커맨드 동작
 
 1. `docs/TODO.md` **대기 중** 테이블에서 최우선순위 태스크 선택 (P0 → P1 → P2 → P3 순)
-2. 선택한 태스크를 **진행 중** 섹션으로 이동 후 커밋
-3. `feature/<task-slug>` 브랜치 생성
+2. `main`에서 `feature/<task-slug>` 브랜치 생성
+3. 선택한 태스크를 **진행 중** 섹션으로 이동 후 커밋 (브랜치 위에서)
 4. 태스크 구현
 5. `./gradlew assembleDebug` 실행
    - 빌드 실패 시: 작업 중단, 원인 보고
@@ -116,11 +116,12 @@ autoSleep/
 
 /developer
   └─> docs/TODO.md에서 최우선 태스크 선택
-  └─> git checkout -b feature/<task-slug>
+  └─> git checkout -b feature/<task-slug> (from main)
+  └─> TODO.md 진행 중으로 이동 커밋
   └─> 구현
   └─> ./gradlew assembleDebug
       ├─ 실패 → 중단 및 보고
-      └─ 성공 → git commit + push → gh pr create [Dev]
+      └─ 성공 → TODO.md 완료 이동 + git commit + push → gh pr create [Dev]
 ```
 
 ---
