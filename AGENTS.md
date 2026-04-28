@@ -12,7 +12,23 @@ Find it with:
 ## PR Format
 - Planner title : [Planner] 요구사항 분석 및 TODO 업데이트 YYYYMMDD
 - Developer title: [Dev] <태스크명>
-- Body: 변경 사항 요약 + docs/TODO.md 링크
+
+### Planner PR body template
+## 변경 사항
+<추가/수정된 요구사항 목록>
+
+## 참고
+[docs/TODO.md](docs/TODO.md)
+
+### Developer PR body template
+## 구현 내용
+<구현한 내용 요약>
+
+## 변경된 파일
+<변경된 주요 파일 목록>
+
+## 참고
+[docs/TODO.md](docs/TODO.md)
 
 ## Build Verification (developer only)
 Run ./gradlew assembleDebug before committing implementation.
