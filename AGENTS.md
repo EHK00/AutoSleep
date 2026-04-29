@@ -53,6 +53,23 @@ Find it with:
 ## 변경 내용
 <수정/추가된 파일과 변경 요약>
 
+## Skill Frontmatter Convention
+모든 `.claude/commands/*.md` 파일은 상단에 YAML frontmatter를 포함해야 합니다:
+
+```yaml
+---
+name: <skill-name>
+description: <Claude가 자동 호출 여부를 판단할 수 있는 설명. 주요 사용 사례를 앞에 배치>
+disable-model-invocation: true   # 워크플로우 명령은 반드시 설정 (사용자만 호출 가능)
+argument-hint: "[인수 설명 (optional)]"   # $ARGUMENTS를 받는 파일에만
+allowed-tools: Bash(git *) Bash(gh *) Read Write Edit Glob Grep   # 자주 쓰는 도구 사전 승인
+---
+```
+
+- `disable-model-invocation: true`: Claude가 자동 실행하지 못하도록 강제. 부작용이 있는 모든 워크플로우(commit, PR 생성 등)에 필수
+- `description`: Claude가 skill을 자동 호출할 때 사용하는 기준. 핵심 트리거 키워드를 앞에 배치
+- `allowed-tools`: 사전 승인 도구 — 권한 프롬프트 없이 실행 가능
+
 ## Build Verification (developer only)
 Run ./gradlew assembleDebug before committing implementation.
 Stop and report cause if build fails. Do NOT commit on failure.

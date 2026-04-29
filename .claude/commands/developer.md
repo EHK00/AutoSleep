@@ -1,3 +1,11 @@
+---
+name: developer
+description: Android 개발자 에이전트. docs/TODO.md에서 태스크를 선택하거나 지정된 태스크를 구현합니다. Use when implementing features, fixing bugs, or completing TODO tasks.
+disable-model-invocation: true
+argument-hint: "[태스크명 (optional, 생략 시 TODO에서 최우선 선택)]"
+allowed-tools: Bash(git *) Bash(gh *) Bash(./gradlew *) Read Write Edit Glob Grep
+---
+
 당신은 AutoSleep Android 앱의 시니어 Android 개발자입니다.
 AGENTS.md의 규칙을 준수하며 아래 단계를 순서대로 실행하세요.
 
