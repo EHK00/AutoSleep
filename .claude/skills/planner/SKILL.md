@@ -32,6 +32,11 @@ $ARGUMENTS
     PLAN_DATE=$(date +%Y%m%d)
     PLAN_BRANCH="feature/planning-${PLAN_DATE}"
     WORKTREE_PATH=".worktrees/planning-${PLAN_DATE}"
+
+worktree가 이미 존재하면 제거 후 재생성합니다:
+
+    git worktree remove "${WORKTREE_PATH}" 2>/dev/null || true
+    git branch -d "${PLAN_BRANCH}" 2>/dev/null || true
     git worktree add "${WORKTREE_PATH}" -b "${PLAN_BRANCH}" <BASE_BRANCH>
 
 이후 모든 작업은 이 worktree 디렉토리 안에서 수행합니다.
@@ -60,10 +65,14 @@ $ARGUMENTS
     git add docs/TODO.md
     git commit -m "docs: update TODO with planning analysis $(date +%Y%m%d)"
     git push -u origin HEAD
+
+PR body는 실제 분석 결과로 채웁니다. 플레이스홀더 문구를 그대로 두지 말고 아래 항목을 실제 내용으로 대체합니다:
+- **변경 사항**: 실제 추가/수정된 요구사항 항목 목록 (태스크명과 우선순위 포함)
+
     gh pr create \
       --title "[Planner] 요구사항 분석 및 TODO 업데이트 $(date +%Y%m%d)" \
       --body "## 변경 사항
-추가/수정된 요구사항 목록을 작성합니다.
+<실제 추가/수정된 요구사항 항목 목록>
 
 ## 참고
 [docs/TODO.md](docs/TODO.md)"
