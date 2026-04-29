@@ -62,9 +62,8 @@ $ARGUMENTS
 [docs/TODO.md](docs/TODO.md)"
 
 ### 7. Worktree 정리
+AGENTS.md의 Worktree Cleanup Policy에 따라 PR 생성 후 자동으로 정리합니다:
 
-PR 생성 후 자동으로 worktree를 정리합니다:
-
-    cd ../..
+    cd <project-root>
     git worktree remove "${WORKTREE_PATH}"
     git branch -d "${PLAN_BRANCH}"
