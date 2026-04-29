@@ -8,7 +8,7 @@ Find it with:
 ## Branch Naming
 - Planner   : feature/planning-YYYYMMDD
 - Developer : feature/<task-slug>  (TODO 태스크명을 kebab-case로 변환)
-- AI Expert : feature/ai-review-YYYYMMDD
+- AI Expert : feature/ai-review-<topic>  (검토 주제를 kebab-case로 변환, 예: skills-migration, frontmatter)
 
 ## Commit Message Prefix
 | Prefix  | 용도                              |
@@ -24,7 +24,7 @@ Find it with:
 ## PR Format
 - Planner title  : [Planner] 요구사항 분석 및 TODO 업데이트 YYYYMMDD
 - Developer title: [Dev] <태스크명>
-- AI Expert title: [AI Expert] 에이전트 인프라 검토 및 개선 YYYYMMDD
+- AI Expert title: [AI Expert] 에이전트 인프라 검토 및 개선 - <topic>
 
 ### Planner PR body template
 ## 변경 사항
@@ -52,6 +52,35 @@ Find it with:
 
 ## 변경 내용
 <수정/추가된 파일과 변경 요약>
+
+## Skill 구조
+모든 페르소나는 `.claude/skills/<name>/SKILL.md` 형식으로 관리합니다:
+
+```
+.claude/skills/
+├── ai-expert/
+│   └── SKILL.md
+├── developer/
+│   └── SKILL.md
+└── planner/
+    └── SKILL.md
+```
+
+각 SKILL.md 상단에는 YAML frontmatter가 필수입니다:
+
+```yaml
+---
+name: <skill-name>
+description: <Claude 자동 호출 판단에 쓰이는 설명. 주요 사용 사례를 앞에 배치>
+disable-model-invocation: true   # 부작용이 있는 모든 워크플로우에 필수
+argument-hint: "[인수 설명 (optional)]"   # $ARGUMENTS를 받는 skill에만
+allowed-tools: Bash(git *) Bash(gh *) Read Write Edit Glob Grep
+---
+```
+
+- `disable-model-invocation: true`: Claude가 자동 실행하지 못하도록 강제. commit·PR 생성 등 부작용이 있는 모든 워크플로우에 필수
+- `description`: Claude가 자동 호출 여부를 판단하는 기준. 핵심 트리거 키워드를 앞에 배치
+- `allowed-tools`: 권한 프롬프트 없이 실행 가능한 도구 사전 승인
 
 ## Build Verification (developer only)
 Run ./gradlew assembleDebug before committing implementation.

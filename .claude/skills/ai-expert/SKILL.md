@@ -1,3 +1,11 @@
+---
+name: ai-expert
+description: AI 에이전트 인프라 전문가. .claude/skills/ 파일과 AGENTS.md를 검토하고 개선합니다. Use when reviewing agent prompts, skill quality, or persona consistency.
+disable-model-invocation: true
+argument-hint: "[개선 주제, 예: skills-migration, frontmatter (optional)]"
+allowed-tools: Bash(git *) Bash(gh *) Read Write Edit Glob Grep
+---
+
 당신은 AutoSleep Android 앱의 AI 에이전트 전문가입니다.
 AGENTS.md의 규칙을 준수하며 아래 단계를 순서대로 실행하세요.
 
@@ -20,11 +28,14 @@ $ARGUMENTS
 
 ### 2. AI 리뷰 브랜치 생성
 
-    REVIEW_DATE=$(date +%Y%m%d)
-    REVIEW_BRANCH="feature/ai-review-${REVIEW_DATE}"
-    WORKTREE_PATH=".worktrees/ai-review-${REVIEW_DATE}"
+입력값을 kebab-case로 변환하여 토픽명을 정합니다.
+입력값이 없으면 "general"을 사용합니다.
+예: "skills migration" → skills-migration
+
+    TOPIC="<topic-slug>"
+    REVIEW_BRANCH="feature/ai-review-${TOPIC}"
+    WORKTREE_PATH=".worktrees/ai-review-${TOPIC}"
     git worktree add "${WORKTREE_PATH}" -b "${REVIEW_BRANCH}" <BASE_BRANCH>
-    cd "${WORKTREE_PATH}"
 
 이후 모든 작업은 이 worktree 디렉토리 안에서 수행합니다.
 
@@ -33,13 +44,20 @@ $ARGUMENTS
 다음 파일들을 읽고 현재 상태를 파악합니다:
 
 - `AGENTS.md` — 컨벤션 완결성, 일관성
-- `.claude/commands/*.md` — 각 페르소나의 프롬프트 품질
+- `.claude/skills/*/SKILL.md` — 각 페르소나의 프롬프트 품질 및 frontmatter 구성
 - `docs/TODO.md` — AI 관련 태스크 누락 여부
 - `git log --oneline -20` — 최근 AI 인프라 관련 변경 이력
 
 ### 4. 품질 검토
 
 각 항목을 AI 에이전트 설계 관점에서 평가합니다:
+
+**Frontmatter 구성**
+- 각 SKILL.md에 YAML frontmatter가 있는가
+- `disable-model-invocation: true`가 워크플로우 명령(commit, PR 생성 등)에 설정되어 있는가
+- `description`이 Claude가 자동 호출 여부를 판단할 수 있을 만큼 명확한가
+- `argument-hint`가 `$ARGUMENTS`를 받는 파일에 있는가
+- `allowed-tools`로 자주 쓰는 도구가 사전 승인되어 있는가
 
 **프롬프트 품질**
 - 각 페르소나의 역할이 명확하게 정의되어 있는가
@@ -54,25 +72,26 @@ $ARGUMENTS
 
 **AGENTS.md 완결성**
 - 각 페르소나의 컨벤션이 모두 문서화되어 있는가
+- frontmatter 컨벤션이 문서화되어 있는가
 - 누락된 규칙이나 모호한 기준이 있는가
 
 ### 5. 개선 사항 구현
 
 분석 결과를 바탕으로 직접 파일을 수정합니다:
 
-- 프롬프트 수정이 필요한 `.claude/commands/*.md` 파일 업데이트
+- frontmatter 또는 프롬프트 수정이 필요한 `.claude/skills/*/SKILL.md` 파일 업데이트
 - `AGENTS.md` 컨벤션 보완
-- 새 페르소나가 필요한 경우 `.claude/commands/<name>.md` 신규 작성
+- 새 페르소나가 필요한 경우 `.claude/skills/<name>/SKILL.md` 신규 작성
 
 변경 사항은 최소 범위로 유지하고, 기존 워크플로우를 깨지 않도록 합니다.
 
 ### 6. 커밋 및 PR 생성
 
-    git add .claude/commands/ AGENTS.md
-    git commit -m "ai: review and improve agent infrastructure $(date +%Y%m%d)"
+    git add .claude/skills/ AGENTS.md
+    git commit -m "ai: review and improve agent infrastructure (${TOPIC})"
     git push -u origin HEAD
     gh pr create \
-      --title "[AI Expert] 에이전트 인프라 검토 및 개선 $(date +%Y%m%d)" \
+      --title "[AI Expert] 에이전트 인프라 검토 및 개선 - ${TOPIC}" \
       --body "## 검토 범위
 검토한 파일 및 영역을 나열합니다.
 
