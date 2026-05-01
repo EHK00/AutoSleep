@@ -37,7 +37,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -53,7 +52,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -63,10 +61,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ekh.autosleep.domain.entity.TimerState
+import com.ekh.autosleep.data.settings.TimeFormat
 import com.ekh.autosleep.presentation.analytics.AnalyticsScreen
 import com.ekh.autosleep.presentation.permission.PermissionSetupScreen
 import com.ekh.autosleep.presentation.permission.PermissionViewModel
 import com.ekh.autosleep.presentation.settings.SettingsScreen
+import com.ekh.autosleep.presentation.timer.TimerRunningScreen
 import com.ekh.autosleep.presentation.timer.TimerScreen
 import com.ekh.autosleep.presentation.timer.TimerViewModel
 import com.ekh.autosleep.ui.theme.AutoSleepTheme
@@ -143,6 +143,7 @@ fun MainScreen(
     permissionViewModel: PermissionViewModel = hiltViewModel(),
 ) {
     val timerState by timerViewModel.timerState.collectAsState()
+    val timeFormat by timerViewModel.timeFormat.collectAsState()
     val permissionState by permissionViewModel.permissionState.collectAsState()
     var setupDone by rememberSaveable { mutableStateOf(false) }
 
@@ -187,30 +188,12 @@ fun MainScreen(
             )
         } else if (isTimerRunning) {
             val running = timerState as TimerState.Running
-            val h = running.remainingMs / 3_600_000
-            val m = (running.remainingMs % 3_600_000) / 60_000
-            val s = (running.remainingMs % 60_000) / 1_000
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = "%02d:%02d:%02d".format(h, m, s),
-                    fontSize = 56.sp,
-                    fontWeight = FontWeight.Light,
-                )
-                Spacer(modifier = Modifier.height(48.dp))
-                OutlinedButton(
-                    onClick = { timerViewModel.cancelTimer() },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
+            TimerRunningScreen(
+                remainingMs = running.remainingMs,
+                timeFormat = timeFormat,
+                onCancel = { timerViewModel.cancelTimer() },
+                modifier = Modifier.padding(innerPadding),
+            )
         } else {
             NavHost(
                 navController = navController,

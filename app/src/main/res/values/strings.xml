@@ -40,6 +40,7 @@
     <string name="timer_tap_to_edit">Tap to edit</string>
     <string name="timer_start">Start</string>
     <string name="timer_no_presets">No saved presets</string>
+    <string name="timer_running_label">Time remaining</string>
 
     <!-- Settings screen -->
     <string name="settings_title">Settings</string>
