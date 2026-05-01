@@ -131,8 +131,8 @@ class MainActivity : ComponentActivity() {
  * 메인 화면 컴포저블.
  *
  * 최초 실행 시 권한이 부족하면 [PermissionSetupScreen]을 전체 화면으로 표시한다.
- * 타이머가 실행 중이면 카운트다운을 전체 화면으로 표시한다.
- * 그 외에는 [NavHost] 기반의 하단 내비게이션 바(타이머 / 설정)를 표시한다.
+ * 그 외에는 [NavHost] 기반의 하단 내비게이션 바(타이머 / 분석 / 설정)를 표시한다.
+ * 타이머 탭에서는 실행 상태에 따라 [TimerRunningScreen] 또는 [TimerScreen]을 전환한다.
  * 설정 화면에서 권한 확인 버튼을 누르면 [AppRoute.PERMISSIONS]로 이동한다.
  */
 @Composable
@@ -152,9 +152,7 @@ fun MainScreen(
     val currentRoute = backStackEntry?.destination?.route
 
     val isFirstRunPermission = !setupDone && !permissionState.canShowTimer
-    val isTimerRunning = timerState is TimerState.Running
-    val showBottomBar = !isFirstRunPermission && !isTimerRunning
-        && currentRoute != AppRoute.PERMISSIONS
+    val showBottomBar = !isFirstRunPermission && currentRoute != AppRoute.PERMISSIONS
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -186,14 +184,6 @@ fun MainScreen(
                 viewModel = permissionViewModel,
                 modifier = Modifier.padding(innerPadding),
             )
-        } else if (isTimerRunning) {
-            val running = timerState as TimerState.Running
-            TimerRunningScreen(
-                remainingMs = running.remainingMs,
-                timeFormat = timeFormat,
-                onCancel = { timerViewModel.cancelTimer() },
-                modifier = Modifier.padding(innerPadding),
-            )
         } else {
             NavHost(
                 navController = navController,
@@ -201,7 +191,16 @@ fun MainScreen(
                 modifier = Modifier.padding(innerPadding),
             ) {
                 composable(AppRoute.TIMER) {
-                    TimerScreen(viewModel = timerViewModel)
+                    val running = timerState as? TimerState.Running
+                    if (running != null) {
+                        TimerRunningScreen(
+                            remainingMs = running.remainingMs,
+                            timeFormat = timeFormat,
+                            onCancel = { timerViewModel.cancelTimer() },
+                        )
+                    } else {
+                        TimerScreen(viewModel = timerViewModel)
+                    }
                 }
                 composable(AppRoute.ANALYTICS) {
                     AnalyticsScreen()
