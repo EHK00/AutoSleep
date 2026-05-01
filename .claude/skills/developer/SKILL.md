@@ -81,6 +81,7 @@ PR body는 실제 구현 내용으로 채웁니다. 플레이스홀더 문구를
 - **변경된 파일**: 실제 변경된 주요 파일 목록
 
     gh pr create \
+      --base "$(echo "${BASE_BRANCH}" | sed 's|^origin/||')" \
       --title "[Dev] <태스크명>" \
       --body "## 구현 내용
 <실제 구현한 내용 요약>
