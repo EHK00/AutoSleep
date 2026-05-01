@@ -35,6 +35,11 @@ $ARGUMENTS
     TOPIC="<topic-slug>"
     REVIEW_BRANCH="feature/ai-review-${TOPIC}"
     WORKTREE_PATH=".worktrees/ai-review-${TOPIC}"
+
+worktree가 이미 존재하면 제거 후 재생성합니다:
+
+    git worktree remove "${WORKTREE_PATH}" 2>/dev/null || true
+    git branch -d "${REVIEW_BRANCH}" 2>/dev/null || true
     git worktree add "${WORKTREE_PATH}" -b "${REVIEW_BRANCH}" <BASE_BRANCH>
 
 이후 모든 작업은 이 worktree 디렉토리 안에서 수행합니다.
@@ -56,7 +61,7 @@ $ARGUMENTS
 - 각 SKILL.md에 YAML frontmatter가 있는가
 - `disable-model-invocation: true`가 워크플로우 명령(commit, PR 생성 등)에 설정되어 있는가
 - `description`이 Claude가 자동 호출 여부를 판단할 수 있을 만큼 명확한가
-- `argument-hint`가 `$ARGUMENTS`를 받는 파일에 있는가
+- 인수(arguments)를 받는 각 SKILL.md에 `argument-hint` 필드가 있는가
 - `allowed-tools`로 자주 쓰는 도구가 사전 승인되어 있는가
 
 **프롬프트 품질**
@@ -90,16 +95,22 @@ $ARGUMENTS
     git add .claude/skills/ AGENTS.md
     git commit -m "ai: review and improve agent infrastructure (${TOPIC})"
     git push -u origin HEAD
+
+PR body는 실제 분석 결과로 채웁니다. 플레이스홀더 문구를 그대로 두지 말고 아래 항목을 실제 내용으로 대체합니다:
+- **검토 범위**: 실제 검토한 파일명과 영역 (예: `.claude/skills/ai-expert/SKILL.md`, `AGENTS.md`)
+- **발견된 문제**: 각 이슈의 구체적 설명과 개선 근거
+- **변경 내용**: 실제 수정/추가한 파일 목록과 각 변경 요약
+
     gh pr create \
       --title "[AI Expert] 에이전트 인프라 검토 및 개선 - ${TOPIC}" \
       --body "## 검토 범위
-검토한 파일 및 영역을 나열합니다.
+<실제 검토한 파일 및 영역 목록>
 
 ## 발견된 문제
-발견된 이슈와 개선 근거를 작성합니다.
+<실제 발견한 이슈와 개선 근거>
 
 ## 변경 내용
-수정/추가된 파일과 변경 요약을 작성합니다."
+<실제 수정/추가된 파일과 변경 요약>"
 
 ### 7. Worktree 정리
 

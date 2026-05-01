@@ -95,6 +95,17 @@ Stop and report cause if build fails. Do NOT commit on failure.
   git worktree remove "<worktree-path>"
   git branch -d "<branch-name>"
 
+Worktree 충돌 처리 (동일 경로가 이미 존재할 경우):
+  git worktree remove "<worktree-path>" 2>/dev/null || true
+  git branch -d "<branch-name>" 2>/dev/null || true
+  git worktree add "<worktree-path>" -b "<branch-name>" <BASE_BRANCH>
+
+## PR Merge Process
+- 각 페르소나가 생성한 PR은 GitHub에서 Squash and Merge로 병합합니다.
+- 머지 후 release/* 브랜치에 반영되며, 다음 플래닝/개발 사이클의 BASE_BRANCH가 됩니다.
+- Developer PR: 리뷰어가 승인한 뒤 머지. 머지 후 Developer가 로컬 worktree를 수동 정리.
+- Planner / AI Expert PR: 별도 리뷰 없이 즉시 머지 가능 (docs/infra 변경만 포함).
+
 ## TODO Priority
 | Level | Criteria                     |
 |-------|------------------------------|

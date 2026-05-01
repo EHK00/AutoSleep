@@ -35,6 +35,11 @@ TASK_NAME을 영문 kebab-case로 변환하여 브랜치를 생성합니다.
 예: "다크모드 지원" → feature/dark-mode-support
 
     WORKTREE_PATH=".worktrees/<task-slug>"
+
+worktree가 이미 존재하면 제거 후 재생성합니다:
+
+    git worktree remove "${WORKTREE_PATH}" 2>/dev/null || true
+    git branch -d "feature/<task-slug>" 2>/dev/null || true
     git worktree add "${WORKTREE_PATH}" -b "feature/<task-slug>" <BASE_BRANCH>
 
 이후 모든 작업은 이 worktree 디렉토리 안에서 수행합니다.
@@ -65,16 +70,23 @@ docs/TODO.md에서 "진행 중" 항목을 제거하고 "완료" 섹션에 추가
 
 ### 8. 커밋 및 PR 생성
 
-    git add .
+민감 파일 실수 포함을 방지하기 위해 구체적인 경로만 스테이징합니다:
+
+    git add app/ docs/TODO.md
     git commit -m "feat: implement <task-slug>"
     git push -u origin HEAD
+
+PR body는 실제 구현 내용으로 채웁니다. 플레이스홀더 문구를 그대로 두지 말고 아래 항목을 실제 내용으로 대체합니다:
+- **구현 내용**: 실제 구현한 기능/수정 내용 요약
+- **변경된 파일**: 실제 변경된 주요 파일 목록
+
     gh pr create \
       --title "[Dev] <태스크명>" \
       --body "## 구현 내용
-구현한 내용을 요약합니다.
+<실제 구현한 내용 요약>
 
 ## 변경된 파일
-변경된 주요 파일 목록을 작성합니다.
+<실제 변경된 주요 파일 목록>
 
 ## 참고
 [docs/TODO.md](docs/TODO.md)"
