@@ -37,7 +37,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -53,7 +52,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -63,10 +61,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ekh.autosleep.domain.entity.TimerState
+import com.ekh.autosleep.data.settings.TimeFormat
 import com.ekh.autosleep.presentation.analytics.AnalyticsScreen
 import com.ekh.autosleep.presentation.permission.PermissionSetupScreen
 import com.ekh.autosleep.presentation.permission.PermissionViewModel
 import com.ekh.autosleep.presentation.settings.SettingsScreen
+import com.ekh.autosleep.presentation.timer.TimerRunningScreen
 import com.ekh.autosleep.presentation.timer.TimerScreen
 import com.ekh.autosleep.presentation.timer.TimerViewModel
 import com.ekh.autosleep.ui.theme.AutoSleepTheme
@@ -131,8 +131,8 @@ class MainActivity : ComponentActivity() {
  * 메인 화면 컴포저블.
  *
  * 최초 실행 시 권한이 부족하면 [PermissionSetupScreen]을 전체 화면으로 표시한다.
- * 타이머가 실행 중이면 카운트다운을 전체 화면으로 표시한다.
- * 그 외에는 [NavHost] 기반의 하단 내비게이션 바(타이머 / 설정)를 표시한다.
+ * 그 외에는 [NavHost] 기반의 하단 내비게이션 바(타이머 / 분석 / 설정)를 표시한다.
+ * 타이머 탭에서는 실행 상태에 따라 [TimerRunningScreen] 또는 [TimerScreen]을 전환한다.
  * 설정 화면에서 권한 확인 버튼을 누르면 [AppRoute.PERMISSIONS]로 이동한다.
  */
 @Composable
@@ -143,6 +143,7 @@ fun MainScreen(
     permissionViewModel: PermissionViewModel = hiltViewModel(),
 ) {
     val timerState by timerViewModel.timerState.collectAsState()
+    val timeFormat by timerViewModel.timeFormat.collectAsState()
     val permissionState by permissionViewModel.permissionState.collectAsState()
     var setupDone by rememberSaveable { mutableStateOf(false) }
 
@@ -151,9 +152,7 @@ fun MainScreen(
     val currentRoute = backStackEntry?.destination?.route
 
     val isFirstRunPermission = !setupDone && !permissionState.canShowTimer
-    val isTimerRunning = timerState is TimerState.Running
-    val showBottomBar = !isFirstRunPermission && !isTimerRunning
-        && currentRoute != AppRoute.PERMISSIONS
+    val showBottomBar = !isFirstRunPermission && currentRoute != AppRoute.PERMISSIONS
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -185,32 +184,6 @@ fun MainScreen(
                 viewModel = permissionViewModel,
                 modifier = Modifier.padding(innerPadding),
             )
-        } else if (isTimerRunning) {
-            val running = timerState as TimerState.Running
-            val h = running.remainingMs / 3_600_000
-            val m = (running.remainingMs % 3_600_000) / 60_000
-            val s = (running.remainingMs % 60_000) / 1_000
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = "%02d:%02d:%02d".format(h, m, s),
-                    fontSize = 56.sp,
-                    fontWeight = FontWeight.Light,
-                )
-                Spacer(modifier = Modifier.height(48.dp))
-                OutlinedButton(
-                    onClick = { timerViewModel.cancelTimer() },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
         } else {
             NavHost(
                 navController = navController,
@@ -218,7 +191,16 @@ fun MainScreen(
                 modifier = Modifier.padding(innerPadding),
             ) {
                 composable(AppRoute.TIMER) {
-                    TimerScreen(viewModel = timerViewModel)
+                    val running = timerState as? TimerState.Running
+                    if (running != null) {
+                        TimerRunningScreen(
+                            remainingMs = running.remainingMs,
+                            timeFormat = timeFormat,
+                            onCancel = { timerViewModel.cancelTimer() },
+                        )
+                    } else {
+                        TimerScreen(viewModel = timerViewModel)
+                    }
                 }
                 composable(AppRoute.ANALYTICS) {
                     AnalyticsScreen()
